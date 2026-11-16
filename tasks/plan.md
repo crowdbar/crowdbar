@@ -58,7 +58,7 @@ The core loop (report → aggregate → estimate → SDK) has no dependency on a
 
 ### Phase 0: Foundation
 
-- [ ] Task 1 (code done; preview deploy and first CI run pending): Monorepo scaffold with CI and a deployed health endpoint
+- [x] Task 1: Monorepo scaffold with CI and a deployed health endpoint
 
 ### Phase 1: Core loop (highest risk, no auth, no dashboard)
 
