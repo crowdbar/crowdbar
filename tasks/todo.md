@@ -15,7 +15,7 @@ Package manager and script runner: **Bun** (never npm, pnpm or yarn). Commands a
 **Acceptance criteria:**
 
 - [ ] (local: done; deployed preview: pending, needs Cloudflare login and approval) `GET /v1/health` returns `200 {"ok":true}` locally and on a deployed preview Worker (production route `api.crowdbar.dev` is configured but not required yet)
-- [ ] (workflow written and failure on type errors checked locally; not yet run on GitHub) CI fails on a lint, type or test error and passes on main
+- [x] (passes on main; failure on type errors checked locally) CI fails on a lint, type or test error and passes on main
 - [x] Each package builds on its own with `bun run --filter '<path>' build`, and `bun install` from a clean clone succeeds with a committed `bun.lock`
 
 **Verification:**

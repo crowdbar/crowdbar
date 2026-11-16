@@ -10,7 +10,7 @@ Crowdsourced progress bar timing API. Apps report how long each phase of a job t
 
 ## Current state
 
-Task 1 code is done (scaffold, `GET /v1/health`, CI, licences). Still pending for Task 1: push to GitHub so CI runs, and the preview deploy (`bun run --filter './apps/api' deploy:preview`, needs `wrangler login`). Next coding step is Task 2.
+Task 1 code is done (scaffold, `GET /v1/health`, CI, licences). CI passes on GitHub. Still pending for Task 1: the preview deploy (`bun run --filter './apps/api' deploy:preview`, needs `wrangler login`). Next coding step is Task 2.
 
 Lint is Biome (`bun run lint`). Worker tests use `@cloudflare/vitest-plugin` (the successor to `@cloudflare/vitest-pool-workers`) with `exports` from `cloudflare:workers`.
 
