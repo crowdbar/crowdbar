@@ -6,5 +6,6 @@
 	// Production route is configured but only takes effect on `wrangler deploy` (not done in Task 1).
 	"routes": [{ "pattern": "api.crowdbar.dev", "custom_domain": true }],
 	"workers_dev": true,
-	"preview_urls": true
+	"preview_urls": true,
+	"previews": {}
 }
