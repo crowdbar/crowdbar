@@ -44,14 +44,14 @@ Package manager and script runner: **Bun** (never npm, pnpm or yarn). Commands a
 
 **Acceptance criteria:**
 
-- [ ] Posting runs for a bar changes what the estimate endpoint returns for that bar and no other
-- [ ] Malformed bodies (missing phases, negative or non-numeric durations) return `400` with an error message
-- [ ] State survives a Worker restart (it is in Durable Object storage, not memory)
+- [x] Posting runs for a bar changes what the estimate endpoint returns for that bar and no other
+- [x] Malformed bodies (missing phases, negative or non-numeric durations) return `400` with an error message
+- [x] State survives a Worker restart (it is in Durable Object storage, not memory)
 
 **Verification:**
 
-- [ ] Tests pass: `bun run --filter './apps/api' test`
-- [ ] Manual check: post three runs with `curl`, read the estimate
+- [x] Tests pass: `bun run --filter './apps/api' test`
+- [x] Manual check: post three runs with `curl`, read the estimate
 
 **Dependencies:** Task 1
 

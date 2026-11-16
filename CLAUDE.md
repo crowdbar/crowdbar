@@ -10,7 +10,7 @@ Crowdsourced progress bar timing API. Apps report how long each phase of a job t
 
 ## Current state
 
-Task 1 is done. Next step is Task 2 in `tasks/todo.md`.
+Tasks 1 and 2 are done. Next step is Task 3 in `tasks/todo.md`.
 
 Preview deploys: `bunx wrangler preview` from `apps/api` (or `bun run --filter './apps/api' deploy:preview`); the `main` preview is at `https://main-crowdbar-api.nifle.workers.dev`. Never run `wrangler deploy` without asking: it attaches the production custom domain `api.crowdbar.dev`.
 

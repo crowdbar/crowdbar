@@ -7,5 +7,9 @@
 	"routes": [{ "pattern": "api.crowdbar.dev", "custom_domain": true }],
 	"workers_dev": true,
 	"preview_urls": true,
+	"durable_objects": {
+		"bindings": [{ "name": "BAR", "class_name": "BarObject" }]
+	},
+	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["BarObject"] }],
 	"previews": {}
 }
