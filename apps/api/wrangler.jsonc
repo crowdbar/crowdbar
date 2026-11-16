@@ -11,5 +11,10 @@
 		"bindings": [{ "name": "BAR", "class_name": "BarObject" }]
 	},
 	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["BarObject"] }],
-	"previews": {}
+	// Previews inherit no bindings; each Preview gets its own Durable Object storage.
+	"previews": {
+		"durable_objects": {
+			"bindings": [{ "name": "BAR", "class_name": "BarObject" }]
+		}
+	}
 }
