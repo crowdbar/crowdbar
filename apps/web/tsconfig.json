@@ -1,5 +1,9 @@
 {
-	"extends": "../../tsconfig.base.json",
-	"compilerOptions": { "outDir": "dist", "rootDir": "src" },
-	"include": ["src"]
+	"extends": "$app/tsconfig",
+	"compilerOptions": {
+		"strict": true,
+		"types": ["$app/types", "./worker-configuration.d.ts"],
+		"customConditions": ["source"]
+	},
+	"include": ["src", "vite.config.ts"]
 }

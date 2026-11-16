@@ -10,7 +10,9 @@ Crowdsourced progress bar timing API. Apps report how long each phase of a job t
 
 ## Current state
 
-Tasks 1 to 4 are done. Next step is Task 5 in `tasks/todo.md`.
+Tasks 1 to 4 are done. Task 5 (demo at `/demo`) is built; it still needs the API preview redeployed and the 30-run comparison for Checkpoint A. Run the demo locally with `VITE_CROWDBAR_API=http://localhost:8787/v1 bun run --filter './apps/web' dev`.
+
+Web: SvelteKit 3 configured in `apps/web/vite.config.ts` (no `svelte.config.js`), imports from `src/lib` use `#lib/<file>.js`. Workspace packages export a `source` condition pointing at their TypeScript, which the web app resolves, so no prior build is needed.
 
 Preview deploys: `bunx wrangler preview` from `apps/api` (or `bun run --filter './apps/api' deploy:preview`); the `main` preview is at `https://main-crowdbar-api.nifle.workers.dev`. Never run `wrangler deploy` without asking: it attaches the production custom domain `api.crowdbar.dev`.
 

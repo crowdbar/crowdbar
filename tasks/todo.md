@@ -117,13 +117,13 @@ Package manager and script runner: **Bun** (never npm, pnpm or yarn). Commands a
 
 **Acceptance criteria:**
 
-- [ ] From the second run onwards, the Crowdbar bar's mean ETA error is displayed next to the naive bar's
-- [ ] The simulation has a "high variance" mode where the sleep ranges depend on a hidden factor (for example a "slow device" flag that triples them), to expose the context problem
-- [ ] The page works against the deployed preview API
+- [x] From the second run onwards, the Crowdbar bar's mean ETA error is displayed next to the naive bar's
+- [x] The simulation has a "high variance" mode where the sleep ranges depend on a hidden factor (for example a "slow device" flag that triples them), to expose the context problem
+- [ ] (works against a local API; pending a preview redeploy of the API with the Durable Object) The page works against the deployed preview API
 
 **Verification:**
 
-- [ ] Build succeeds: `bun run build`
+- [x] Build succeeds: `bun run build`
 - [ ] Manual check: run the demo 30 times in each mode and note both error figures
 
 **Dependencies:** Task 4
