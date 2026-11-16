@@ -13,6 +13,7 @@
       "name": "@crowdbar/api",
       "version": "0.0.0",
       "dependencies": {
+        "@crowdbar/core": "workspace:*",
         "hono": "^4.13.19",
       },
       "devDependencies": {
@@ -29,6 +30,9 @@
     "packages/core": {
       "name": "@crowdbar/core",
       "version": "0.0.0",
+      "devDependencies": {
+        "vitest": "^4.1.0",
+      },
     },
     "packages/db": {
       "name": "@crowdbar/db",

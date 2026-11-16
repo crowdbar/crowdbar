@@ -24,15 +24,8 @@ app.post("/runs", async (c) => {
 
 app.get("/bars/:bar/estimate", async (c) => {
 	const bar = c.req.param("bar");
-	const phases = await c.env.BAR.getByName(bar).estimate();
-	const ready = phases.length > 0;
-	return c.json({
-		bar,
-		segment: null,
-		fallback: false,
-		ready,
-		phases: ready ? phases : [],
-	});
+	const { ready, phases } = await c.env.BAR.getByName(bar).estimate();
+	return c.json({ bar, segment: null, fallback: false, ready, phases });
 });
 
 function validateRun(body: unknown): string | undefined {

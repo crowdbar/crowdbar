@@ -69,14 +69,14 @@ Package manager and script runner: **Bun** (never npm, pnpm or yarn). Commands a
 
 **Acceptance criteria:**
 
-- [ ] On generated samples from known distributions, p50 and p90 are within 5% of the exact values
-- [ ] A single extreme outlier among 100 samples moves p50 by less than 5%
-- [ ] Below the minimum sample count the estimate response has `ready: false` and carries no durations; with the default of 1, a single run is enough to get an estimate
+- [x] On generated samples from known distributions, p50 and p90 are within 5% of the exact values
+- [x] A single extreme outlier among 100 samples moves p50 by less than 5%
+- [x] Below the minimum sample count the estimate response has `ready: false` and carries no durations; with the default of 1, a single run is enough to get an estimate
 
 **Verification:**
 
-- [ ] Tests pass: `bun run --filter './packages/core' test` and `bun run --filter './apps/api' test`
-- [ ] Manual check: none needed
+- [x] Tests pass: `bun run --filter './packages/core' test` and `bun run --filter './apps/api' test`
+- [x] Manual check: none needed
 
 **Dependencies:** Task 2
 

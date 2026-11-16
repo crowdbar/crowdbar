@@ -12,7 +12,8 @@
 		"deploy:preview": "wrangler preview"
 	},
 	"dependencies": {
-		"hono": "^4.13.19"
+		"hono": "^4.13.19",
+		"@crowdbar/core": "workspace:*"
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-plugin": "^1.8.3",

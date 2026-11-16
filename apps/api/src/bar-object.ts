@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import { add, count, empty, type Histogram, quantile } from "@crowdbar/core";
 
 export type PhaseDuration = { phase: string; ms: number };
 export type PhaseEstimate = {
@@ -7,42 +8,57 @@ export type PhaseEstimate = {
 	p90: number;
 	samples: number;
 };
+export type Estimate = { ready: boolean; phases: PhaseEstimate[] };
 
-// One instance per bar. Keeps a running aggregate per phase, never raw runs.
+// One instance per bar. Keeps a histogram per phase, never raw runs.
 export class BarObject extends DurableObject<Env> {
 	constructor(ctx: DurableObjectState, env: Env) {
 		super(ctx, env);
-		ctx.storage.sql.exec(`CREATE TABLE IF NOT EXISTS phases (
+		ctx.storage.sql.exec(`CREATE TABLE IF NOT EXISTS phase_histograms (
 			phase TEXT PRIMARY KEY,
 			position INTEGER NOT NULL,
-			samples INTEGER NOT NULL,
-			total_ms REAL NOT NULL
+			histogram TEXT NOT NULL
 		)`);
 	}
 
+	private histograms() {
+		return this.ctx.storage.sql
+			.exec<{ phase: string; histogram: string }>(
+				"SELECT phase, histogram FROM phase_histograms ORDER BY position",
+			)
+			.toArray()
+			.map(({ phase, histogram }) => ({
+				phase,
+				histogram: JSON.parse(histogram) as Histogram,
+			}));
+	}
+
+	// Synchronous SQL with no await in between, so a run is applied atomically.
 	report(phases: PhaseDuration[]): void {
 		const sql = this.ctx.storage.sql;
+		const stored = new Map(
+			this.histograms().map(({ phase, histogram }) => [phase, histogram]),
+		);
 		for (const { phase, ms } of phases) {
 			sql.exec(
-				`INSERT INTO phases (phase, position, samples, total_ms)
-				VALUES (?, (SELECT COUNT(*) FROM phases), 1, ?)
-				ON CONFLICT (phase) DO UPDATE SET samples = samples + 1, total_ms = total_ms + excluded.total_ms`,
+				`INSERT INTO phase_histograms (phase, position, histogram)
+				VALUES (?, (SELECT COUNT(*) FROM phase_histograms), ?)
+				ON CONFLICT (phase) DO UPDATE SET histogram = excluded.histogram`,
 				phase,
-				ms,
+				JSON.stringify(add(stored.get(phase) ?? empty(), ms)),
 			);
 		}
 	}
 
-	// shortcut: mean stands in for p50 and p90; Task 3 replaces it with histogram quantiles.
-	estimate(): PhaseEstimate[] {
-		return this.ctx.storage.sql
-			.exec<{ phase: string; samples: number; total_ms: number }>(
-				"SELECT phase, samples, total_ms FROM phases ORDER BY position",
-			)
-			.toArray()
-			.map(({ phase, samples, total_ms }) => {
-				const mean = Math.round(total_ms / samples);
-				return { phase, p50: mean, p90: mean, samples };
-			});
+	estimate(minSamples = 1): Estimate {
+		const phases = this.histograms().map(({ phase, histogram }) => ({
+			phase,
+			p50: Math.round(quantile(histogram, 0.5)),
+			p90: Math.round(quantile(histogram, 0.9)),
+			samples: count(histogram),
+		}));
+		const ready =
+			phases.length > 0 && phases.every((p) => p.samples >= minSamples);
+		return { ready, phases: ready ? phases : [] };
 	}
 }
