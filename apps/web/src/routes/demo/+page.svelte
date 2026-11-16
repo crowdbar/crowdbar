@@ -92,6 +92,8 @@ async function runMany(n: number) {
 		while (remainingRuns > 0) {
 			await runOnce(m);
 			remainingRuns--;
+			// The SDK reports without waiting; give the report time to land before the next run reads the estimate.
+			if (remainingRuns > 0) await sleep(500);
 		}
 	} finally {
 		running = false;
