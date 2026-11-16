@@ -59,11 +59,11 @@ async function runOnce(m: Mode, speed: number) {
 		const naiveEta = naiveRemaining(elapsedMs, phasesDone, PHASES.length);
 		return { elapsedMs, p, naiveEta };
 	};
-	// Score on a fixed real-time tick; draw on every animation frame so the bars move smoothly.
+	// Score once per 100 ms of job time (faster in real time when fast-forwarding); draw every frame so the bars move smoothly.
 	const timer = setInterval(() => {
 		const { elapsedMs, p, naiveEta } = snapshot();
 		ticks.push({ elapsedMs, crowdbar: p.remainingMs, naive: naiveEta });
-	}, TICK_MS);
+	}, TICK_MS / speed);
 	let frame = 0;
 	const draw = () => {
 		const { p, naiveEta } = snapshot();
