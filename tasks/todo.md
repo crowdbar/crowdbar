@@ -179,7 +179,9 @@ Decision: go for normal mode; the global estimate fails in high-variance mode. C
 
 **Estimated scope:** Medium
 
-## Task 10b: Pace correction in the SDK
+## Task 10b: Pace correction in the SDK (closed, not done)
+
+**Status:** Closed on 2026-11-16 after measurement: it failed the normal and independent-phases criteria and was removed from the SDK and the demo. The reason and figures are in `tasks/plan.md` (Architecture Decisions). The demo keeps the independent-phases mode.
 
 **Description:** When a run's completed phases took longer or shorter than their estimates, the SDK scales the estimates of the remaining phases by a damped ratio of actual to estimated time so far. SDK only; no API change. The damping is a single constant, and the feature is switchable. The demo gains an "independent phases" mode (each phase has its own hidden slow/fast factor) and shows four figures per mode: naive, Crowdbar, Crowdbar + pace correction, and Crowdbar + segments (where a segment applies).
 
@@ -207,7 +209,7 @@ Decision: go for normal mode; the global estimate fails in high-variance mode. C
 
 - [x] Full results table for all three modes shown to the human before Task 6
 - [x] If pace correction fails the normal or independent-phases criterion, report the numbers without further tuning and wait
-- [ ] Decision with human on pace correction (it ships off by default) and on starting Task 6
+- [x] Decision with human on pace correction and on starting Task 6: pace correction dropped, segments kept, Task 6 next
 
 Figures (2026-11-16): mean ETA error as a share of run duration, averaged over 5 sets of 30 runs per mode on a fresh bar each, against a local API with a simulated clock (same SDK and job code as the demo). `PACE_DAMPING` = 0.5, chosen before measuring.
 
@@ -306,6 +308,7 @@ Figures (2026-11-16): mean ETA error as a share of run duration, averaged over 5
 - [ ] Stats match what the public estimate endpoint returns for the same bar
 - [ ] A bar with no runs shows an empty state with the SDK snippet, not zeros; a bar below its minimum-runs setting shows how many runs are still needed
 - [ ] Stats are only visible to the project's owner
+- [ ] Per-segment stats: each segment is listed with its run count, p50 and p90 per phase, and whether it is served directly or falls back to the global estimate
 
 **Verification:**
 
@@ -478,6 +481,7 @@ Figures (2026-11-16): mean ETA error as a share of run duration, averaged over 5
 - [ ] Following the quickstart from a clean directory produces a working bar against production
 - [ ] `bun add crowdbar` in a fresh project installs the TypeScript SDK from the npm registry with types, and `uv add crowdbar` installs the Python SDK from PyPI
 - [ ] Production is live on `crowdbar.dev` (site and dashboard) and `api.crowdbar.dev` (API)
+- [ ] The quickstart explains segments and tells developers to pass one whenever they know a factor that makes runs slower (device class, file size bucket, region), citing the demo's high-variance figures: 35% mean ETA error without a segment, 13% with one
 
 **Verification:**
 

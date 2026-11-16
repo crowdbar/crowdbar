@@ -20,7 +20,6 @@ const FAST_FORWARD = 5;
 const BARS = {
 	naive: "Naive bar",
 	crowdbar: "Crowdbar",
-	paced: "Crowdbar + pace correction",
 	segmented: "Crowdbar + segments",
 } as const;
 type Bar = keyof typeof BARS;
@@ -64,14 +63,13 @@ async function runOnce(m: Mode, speed: number) {
 	const options = { baseUrl: API, now: clock };
 	const bar = `demo-${m}`;
 	// New clients per run, so each run picks up the estimate that the previous runs produced.
-	const [crowdbar, paced, segmented] = await Promise.all([
+	const [crowdbar, segmented] = await Promise.all([
 		new Crowdbar(options).start(bar),
-		new Crowdbar({ ...options, paceCorrection: true }).start(bar),
 		plan.segment === undefined
 			? undefined
 			: new Crowdbar(options).start(bar, { segment: plan.segment }),
 	]);
-	const runs = { crowdbar, paced, ...(segmented && { segmented }) };
+	const runs = { crowdbar, ...(segmented && { segmented }) };
 	const ticks: Tick[] = [];
 	let phasesDone = 0;
 	const start = clock();
@@ -209,8 +207,7 @@ async function runMany(n: number, speed = 1) {
 			</dl>
 			<p class="text-sm text-gray-600">
 				Over {scored.length} scored run{scored.length === 1 ? "" : "s"}. Error is |predicted − actual remaining time| as a share of the run's duration, averaged
-				from the end of the first phase (before that the naive bar has no ETA). Pace correction scales the remaining phases by how fast this run has been so
-				far; segments use estimates from runs on the same kind of device.
+				from the end of the first phase (before that the naive bar has no ETA). Segments use estimates from runs on the same kind of device.
 			</p>
 		{/if}
 	</section>

@@ -27,6 +27,16 @@ Crowdbar is a crowdsourced progress bar timing API. A developer creates a projec
 - **Better Auth runs inside the SvelteKit app, on D1 through Drizzle.** Better Auth has no direct D1 adapter, and Drizzle also serves the rest of the schema. The auth instance is built per request, because Workers bindings only exist per request.
 - **D1 holds config only** (auth tables, projects, bars, phases). Schema and migrations live in `packages/db` and are shared by both Workers.
 - **Timings are never stored as raw events.** One Durable Object per bar holds a log-scale histogram per phase and per segment. Writes stay cheap and storage stays bounded.
+- **No pace correction in the SDK (measured and dropped on 2026-11-16; do not retry without new evidence).** Task 10b scaled the remaining phases by a damped ratio of actual to estimated time so far (damping 0.5, chosen before measuring). Mean ETA error, 5 sets of 30 runs per mode:
+
+  | Mode               | Naive | Crowdbar | + pace correction | + segments |
+  | ------------------ | ----- | -------- | ----------------- | ---------- |
+  | Normal             | 48.1% | 12.4%    | 15.5%             | n/a        |
+  | High variance      | 48.0% | 35.4%    | 22.0%             | 13.1%      |
+  | Independent phases | 48.7% | 24.5%    | 30.6%             | n/a        |
+
+  It only helps when one hidden factor slows every phase, and segments fix that case better. When phases vary independently, a run's pace so far is noise, and scaling by it made estimates worse (+3.1 points in normal mode, +6.2 with independent phases). Segments are the remedy for context-dependent durations.
+
 - **Aggregation maths is a pure package (`packages/core`)** with no Cloudflare dependency, so it is unit-testable and portable.
 - **Estimates are cached at the edge** with a short TTL.
 - **The SDK never blocks the host app.** Local cache, safe fallback, fire-and-forget reports.
@@ -74,9 +84,11 @@ Passed on 2026-11-16 with a reorder. Mean ETA error over 30 runs: normal mode na
 ### Phase 1b: Context (pulled forward)
 
 - [x] Task 10: Segmented estimates with global fallback
-- [ ] Task 10b: Pace correction in the SDK (damped actual/estimated ratio scales remaining phases; SDK only)
+- [ ] ~~Task 10b: Pace correction in the SDK~~ Closed, not done: measured and dropped (see Architecture Decisions)
 
 ### Checkpoint A2: Segments and pace correction measured, full table reviewed before Task 6
+
+Passed on 2026-11-16: segments kept, pace correction dropped, Task 6 next.
 
 ### Phase 2: Projects, bars and phases
 
@@ -106,23 +118,23 @@ Passed on 2026-11-16 with a reorder. Mean ETA error over 30 runs: normal mode na
 ## Parallelisation
 
 - Tasks 2 to 5 are sequential.
-- After Checkpoint A, Tasks 10 and 10b run first (owner decision), then Checkpoint A2, then Tasks 6 and 7.
+- After Checkpoint A, Tasks 10 and 10b ran first (owner decision), then Checkpoint A2, then Tasks 6 and 7.
 - Tasks 11 and 12 are independent of each other; Task 13 needs Task 11.
 - Tasks 14 and 15 are independent of each other.
 - Task 8 needs both Task 2 and Task 7.
 
 ## Risks and Mitigations
 
-| Risk                                                                                               | Impact | Mitigation                                                                                                                                                                       |
-| -------------------------------------------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Estimates are no better than a naive bar because durations depend on context                       | High   | Checkpoint A measures this before any dashboard work. Segments (Task 10) are the planned remedy; Task 10 pulled forward after Checkpoint A, plus SDK pace correction (Task 10b). |
-| With a minimum of 1 run, one bad or malicious first run sets the estimate                          | Medium | The response carries the sample count so the SDK and dashboard can show low confidence. Developers can raise the minimum per bar.                                                |
-| Poisoned data from public keys                                                                     | High   | Task 12: bounds validation, rate limits, quantiles, optional origin allow-list per project.                                                                                      |
-| One Durable Object per bar becomes a hotspot for a very popular bar                                | Medium | Histogram updates are tiny. If needed, batch reports in the Worker or shard by segment. Not solved in v1.                                                                        |
-| Better Auth on Workers and D1 needs per-request setup and has had rough edges                      | Medium | Task 6 starts from the current official docs and a known SvelteKit + Drizzle + D1 template.                                                                                      |
-| Bun and Cloudflare tooling drift (Wrangler, Vitest pool config has changed between versions)       | Low    | Task 1 checks current docs; tests run on Vitest, not `bun test`.                                                                                                                 |
-| Google sign-in needs an OAuth consent screen, which Google may review before it works for everyone | Low    | Create the Google Cloud OAuth client early in Task 6; GitHub sign-in works meanwhile.                                                                                            |
-| Cloudflare-specific storage creates lock-in                                                        | Medium | Maths in `packages/core`; storage access behind one small interface in `apps/api`.                                                                                               |
+| Risk                                                                                               | Impact | Mitigation                                                                                                                                                                                           |
+| -------------------------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Estimates are no better than a naive bar because durations depend on context                       | High   | Checkpoint A measures this before any dashboard work. Segments (Task 10) are the planned remedy; Task 10 pulled forward after Checkpoint A, SDK pace correction (Task 10b) was measured and dropped. |
+| With a minimum of 1 run, one bad or malicious first run sets the estimate                          | Medium | The response carries the sample count so the SDK and dashboard can show low confidence. Developers can raise the minimum per bar.                                                                    |
+| Poisoned data from public keys                                                                     | High   | Task 12: bounds validation, rate limits, quantiles, optional origin allow-list per project.                                                                                                          |
+| One Durable Object per bar becomes a hotspot for a very popular bar                                | Medium | Histogram updates are tiny. If needed, batch reports in the Worker or shard by segment. Not solved in v1.                                                                                            |
+| Better Auth on Workers and D1 needs per-request setup and has had rough edges                      | Medium | Task 6 starts from the current official docs and a known SvelteKit + Drizzle + D1 template.                                                                                                          |
+| Bun and Cloudflare tooling drift (Wrangler, Vitest pool config has changed between versions)       | Low    | Task 1 checks current docs; tests run on Vitest, not `bun test`.                                                                                                                                     |
+| Google sign-in needs an OAuth consent screen, which Google may review before it works for everyone | Low    | Create the Google Cloud OAuth client early in Task 6; GitHub sign-in works meanwhile.                                                                                                                |
+| Cloudflare-specific storage creates lock-in                                                        | Medium | Maths in `packages/core`; storage access behind one small interface in `apps/api`.                                                                                                                   |
 
 ## Open Questions
 
