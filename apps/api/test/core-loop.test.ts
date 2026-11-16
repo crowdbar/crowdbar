@@ -106,8 +106,11 @@ describe("core loop", () => {
 			await postRun({ bar: "export-e", phases: [{ phase: "a", ms }] });
 		}
 		const stub = env.BAR.getByName("export-e");
-		expect(await stub.estimate(3)).toEqual({ ready: false, phases: [] });
-		expect((await stub.estimate(2)).ready).toBe(true);
+		expect(await stub.estimate(null, 3)).toMatchObject({
+			ready: false,
+			phases: [],
+		});
+		expect((await stub.estimate(null, 2)).ready).toBe(true);
 	});
 
 	it("serves an estimate after a single run by default", async () => {

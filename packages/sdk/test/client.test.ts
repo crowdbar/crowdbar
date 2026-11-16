@@ -66,6 +66,17 @@ describe("Crowdbar", () => {
 		expect(fetch).toHaveBeenCalledTimes(1);
 	});
 
+	it("asks for the segment's estimate and caches each segment separately", async () => {
+		const { crowdbar, fetch } = setup(ok);
+		await crowdbar.start("export", { segment: "mobile" });
+		await crowdbar.start("export", { segment: "mobile" });
+		await crowdbar.start("export");
+		expect(fetch.mock.calls.map(([url]) => url)).toEqual([
+			"https://api.test/v1/bars/export/estimate?segment=mobile",
+			"https://api.test/v1/bars/export/estimate",
+		]);
+	});
+
 	it.each([
 		[
 			"the API is unreachable",

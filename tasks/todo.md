@@ -124,7 +124,7 @@ Package manager and script runner: **Bun** (never npm, pnpm or yarn). Commands a
 **Verification:**
 
 - [x] Build succeeds: `bun run build`
-- [ ] Manual check: run the demo 30 times in each mode and note both error figures
+- [x] Manual check: run the demo 30 times in each mode and note both error figures (see Checkpoint A)
 
 **Dependencies:** Task 4
 
@@ -137,9 +137,76 @@ Package manager and script runner: **Bun** (never npm, pnpm or yarn). Commands a
 
 ## Checkpoint A: Is the estimate good enough? (go / no-go)
 
-- [ ] All tests pass, all packages build
-- [ ] Demo figures recorded: Crowdbar vs naive ETA error, normal and high-variance modes
-- [ ] Decision with human: continue as planned, pull Task 10 (segments) forward, or stop
+- [x] All tests pass, all packages build
+- [x] Demo figures recorded: Crowdbar vs naive ETA error, normal and high-variance modes
+- [x] Decision with human: continue as planned, pull Task 10 (segments) forward, or stop
+
+Figures (2026-11-16, 30 runs per mode, mean ETA error as a share of run duration):
+
+| Mode          | Naive | Crowdbar |
+| ------------- | ----- | -------- |
+| Normal        | 48%   | 13%      |
+| High variance | 48%   | 50%      |
+
+Decision: go for normal mode; the global estimate fails in high-variance mode. Continue, but reorder: Task 10 (segments) and the new Task 10b (pace correction) run now, then Checkpoint A2, then Task 6.
+
+---
+
+## Phase 1b: Context (pulled forward)
+
+## Task 10: Segmented estimates with global fallback
+
+**Description:** Runs and estimate requests accept an optional `segment` string. The Durable Object keeps a histogram per segment as well as the global one. An estimate for a segment below the minimum sample count falls back to the global estimate and says so.
+
+**Acceptance criteria:**
+
+- [ ] In the demo's high-variance mode, passing the hidden factor as the segment reduces ETA error compared with no segment
+- [x] A segment with too few samples returns the global estimate with a `fallback: true` marker
+- [x] (cap: 100 segments per bar) The number of segments per bar is capped; runs beyond the cap count towards the global histogram only
+
+**Verification:**
+
+- [x] Tests pass: `bun run --filter './apps/api' test` and `bun run --filter './packages/sdk' test`
+- [ ] Manual check: rerun the demo comparison in high-variance mode with segments on
+
+**Dependencies:** Task 3 (pulled forward after Checkpoint A, runs before Task 6)
+
+**Files likely touched:**
+
+- `apps/api/src/bar-object.ts`, `apps/api/src/routes/estimate.ts`, `apps/api/src/routes/runs.ts`
+- `packages/sdk/src/client.ts`
+- `apps/web/src/lib/simulated-job.ts`
+
+**Estimated scope:** Medium
+
+## Task 10b: Pace correction in the SDK
+
+**Description:** When a run's completed phases took longer or shorter than their estimates, the SDK scales the estimates of the remaining phases by a damped ratio of actual to estimated time so far. SDK only; no API change. The damping is a single constant, and the feature is switchable. The demo gains an "independent phases" mode (each phase has its own hidden slow/fast factor) and shows four figures per mode: naive, Crowdbar, Crowdbar + pace correction, and Crowdbar + segments (where a segment applies).
+
+**Acceptance criteria:**
+
+- [ ] In high-variance mode without segments, mean ETA error is clearly below both the naive bar and uncorrected Crowdbar
+- [ ] In normal mode, error is no worse than uncorrected Crowdbar (within 2 percentage points)
+- [ ] In independent-phases mode, error is no worse than uncorrected Crowdbar (within 2 percentage points)
+
+**Verification:**
+
+- [ ] Tests pass: `bun run --filter './packages/sdk' test` and `bun run --filter './apps/web' test`
+- [ ] Manual check: 30 runs per mode, full table of the four figures for all three modes
+
+**Dependencies:** Task 10
+
+**Files likely touched:**
+
+- `packages/sdk/src/progress.ts`, `packages/sdk/src/client.ts`
+- `apps/web/src/lib/simulated-job.ts`, `apps/web/src/routes/demo/+page.svelte`
+
+**Estimated scope:** Small
+
+## Checkpoint A2: Segments and pace correction measured
+
+- [ ] Full results table for all three modes shown to the human before Task 6
+- [ ] If pace correction fails the normal or independent-phases criterion, report the numbers without further tuning and wait
 
 ---
 
@@ -254,31 +321,6 @@ Package manager and script runner: **Bun** (never npm, pnpm or yarn). Commands a
 ---
 
 ## Phase 3: Quality and hardening
-
-## Task 10: Segmented estimates with global fallback
-
-**Description:** Runs and estimate requests accept an optional `segment` string. The Durable Object keeps a histogram per segment as well as the global one. An estimate for a segment below the minimum sample count falls back to the global estimate and says so.
-
-**Acceptance criteria:**
-
-- [ ] In the demo's high-variance mode, passing the hidden factor as the segment reduces ETA error compared with no segment
-- [ ] A segment with too few samples returns the global estimate with a `fallback: true` marker
-- [ ] The number of segments per bar is capped; runs beyond the cap count towards the global histogram only
-
-**Verification:**
-
-- [ ] Tests pass: `bun run --filter './apps/api' test` and `bun run --filter './packages/sdk' test`
-- [ ] Manual check: rerun the demo comparison in high-variance mode with segments on
-
-**Dependencies:** Task 3 (can run in parallel with Phase 2)
-
-**Files likely touched:**
-
-- `apps/api/src/bar-object.ts`, `apps/api/src/routes/estimate.ts`, `apps/api/src/routes/runs.ts`
-- `packages/sdk/src/client.ts`
-- `apps/web/src/lib/simulated-job.ts`
-
-**Estimated scope:** Medium
 
 ## Task 11: Edge caching of estimates
 
