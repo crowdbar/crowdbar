@@ -11,6 +11,8 @@ export type CrowdbarOptions = {
 	timeoutMs?: number;
 	fetch?: typeof fetch;
 	now?: () => number;
+	// Scale the remaining phases by how fast or slow this run has been so far. Off by default.
+	paceCorrection?: boolean;
 };
 
 export type StartOptions = { segment?: string };
@@ -23,6 +25,7 @@ export class Crowdbar {
 	private readonly timeoutMs: number;
 	private readonly fetch: typeof fetch;
 	readonly now: () => number;
+	readonly paceCorrection: boolean;
 	// shortcut: in-memory only, lost on page reload; persist (e.g. localStorage) if cold starts matter.
 	private readonly cache = new Map<string, EstimatePhase[]>();
 
@@ -36,6 +39,7 @@ export class Crowdbar {
 		this.fetch =
 			options.fetch ?? ((input, init) => globalThis.fetch(input, init));
 		this.now = options.now ?? (() => performance.now());
+		this.paceCorrection = options.paceCorrection ?? false;
 	}
 
 	// Never rejects: without an estimate the run still works and reports, with ready: false.
@@ -141,8 +145,9 @@ export class Run {
 		if (this.finished) return { ready: true, progress: 1, remainingMs: 0 };
 		const p = computeProgress(
 			this.estimate,
-			new Set(this.durations.keys()),
+			this.durations,
 			this.currentElapsed(),
+			this.client.paceCorrection,
 		);
 		// Progress never goes backwards, even if a later phase runs faster than expected.
 		this.last = Math.max(this.last, p.progress);

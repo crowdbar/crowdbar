@@ -10,7 +10,7 @@ Crowdsourced progress bar timing API. Apps report how long each phase of a job t
 
 ## Current state
 
-Tasks 1 to 4 are done. Task 5 (demo at `/demo`) is built; it still needs the API preview redeployed and the 30-run comparison for Checkpoint A. Run the demo locally with `VITE_CROWDBAR_API=http://localhost:8787/v1 bun run --filter './apps/web' dev`.
+Tasks 1 to 5 and Task 10 (segments, pulled forward) are done. Task 10b (SDK pace correction, off by default) is built but failed two of its criteria; waiting on the owner at Checkpoint A2 before Task 6. Run the demo locally with `VITE_CROWDBAR_API=http://localhost:8787/v1 bun run --filter './apps/web' dev`.
 
 Web: SvelteKit 3 configured in `apps/web/vite.config.ts` (no `svelte.config.js`), imports from `src/lib` use `#lib/<file>.js`. Workspace packages export a `source` condition pointing at their TypeScript, which the web app resolves, so no prior build is needed.
 

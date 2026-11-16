@@ -160,14 +160,14 @@ Decision: go for normal mode; the global estimate fails in high-variance mode. C
 
 **Acceptance criteria:**
 
-- [ ] In the demo's high-variance mode, passing the hidden factor as the segment reduces ETA error compared with no segment
+- [x] (13% with segments vs 35% without, see Checkpoint A2) In the demo's high-variance mode, passing the hidden factor as the segment reduces ETA error compared with no segment
 - [x] A segment with too few samples returns the global estimate with a `fallback: true` marker
 - [x] (cap: 100 segments per bar) The number of segments per bar is capped; runs beyond the cap count towards the global histogram only
 
 **Verification:**
 
 - [x] Tests pass: `bun run --filter './apps/api' test` and `bun run --filter './packages/sdk' test`
-- [ ] Manual check: rerun the demo comparison in high-variance mode with segments on
+- [x] Manual check: rerun the demo comparison in high-variance mode with segments on
 
 **Dependencies:** Task 3 (pulled forward after Checkpoint A, runs before Task 6)
 
@@ -185,14 +185,14 @@ Decision: go for normal mode; the global estimate fails in high-variance mode. C
 
 **Acceptance criteria:**
 
-- [ ] In high-variance mode without segments, mean ETA error is clearly below both the naive bar and uncorrected Crowdbar
-- [ ] In normal mode, error is no worse than uncorrected Crowdbar (within 2 percentage points)
-- [ ] In independent-phases mode, error is no worse than uncorrected Crowdbar (within 2 percentage points)
+- [x] (22% vs naive 48% and Crowdbar 35%) In high-variance mode without segments, mean ETA error is clearly below both the naive bar and uncorrected Crowdbar
+- [ ] (FAILED: 15.5% vs 12.4%, +3.1 points) In normal mode, error is no worse than uncorrected Crowdbar (within 2 percentage points)
+- [ ] (FAILED: 30.6% vs 24.5%, +6.2 points) In independent-phases mode, error is no worse than uncorrected Crowdbar (within 2 percentage points)
 
 **Verification:**
 
-- [ ] Tests pass: `bun run --filter './packages/sdk' test` and `bun run --filter './apps/web' test`
-- [ ] Manual check: 30 runs per mode, full table of the four figures for all three modes
+- [x] Tests pass: `bun run --filter './packages/sdk' test` and `bun run --filter './apps/web' test`
+- [x] Manual check: 30 runs per mode, full table of the four figures for all three modes
 
 **Dependencies:** Task 10
 
@@ -205,8 +205,17 @@ Decision: go for normal mode; the global estimate fails in high-variance mode. C
 
 ## Checkpoint A2: Segments and pace correction measured
 
-- [ ] Full results table for all three modes shown to the human before Task 6
-- [ ] If pace correction fails the normal or independent-phases criterion, report the numbers without further tuning and wait
+- [x] Full results table for all three modes shown to the human before Task 6
+- [x] If pace correction fails the normal or independent-phases criterion, report the numbers without further tuning and wait
+- [ ] Decision with human on pace correction (it ships off by default) and on starting Task 6
+
+Figures (2026-11-16): mean ETA error as a share of run duration, averaged over 5 sets of 30 runs per mode on a fresh bar each, against a local API with a simulated clock (same SDK and job code as the demo). `PACE_DAMPING` = 0.5, chosen before measuring.
+
+| Mode               | Naive | Crowdbar | + pace correction | + segments |
+| ------------------ | ----- | -------- | ----------------- | ---------- |
+| Normal             | 48.1% | 12.4%    | 15.5%             | n/a        |
+| High variance      | 48.0% | 35.4%    | 22.0%             | 13.1%      |
+| Independent phases | 48.7% | 24.5%    | 30.6%             | n/a        |
 
 ---
 

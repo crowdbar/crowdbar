@@ -1,6 +1,6 @@
-// A fake three-phase job used by the demo to compare a Crowdbar bar with a naive one.
+// A fake three-phase job used by the demo to compare Crowdbar bars with a naive one.
 
-export type Mode = "normal" | "high-variance";
+export type Mode = "normal" | "high-variance" | "independent";
 
 export const PHASES = [
 	{ phase: "decode", min: 500, max: 1500 },
@@ -9,16 +9,24 @@ export const PHASES = [
 ];
 
 // In high-variance mode, half the runs are on a hidden "slow device" that triples every phase.
+// In independent mode, each phase is tripled on its own with probability one half.
 export const SLOW_FACTOR = 3;
 
 export function planRun(mode: Mode, rand: () => number = Math.random) {
-	const slow = mode === "high-variance" && rand() < 0.5;
-	const factor = slow ? SLOW_FACTOR : 1;
-	const durations = PHASES.map(({ phase, min, max }) => ({
-		phase,
-		ms: Math.round((min + rand() * (max - min)) * factor),
-	}));
-	return { slow, durations };
+	const slowDevice = mode === "high-variance" && rand() < 0.5;
+	const durations = PHASES.map(({ phase, min, max }) => {
+		const slow = slowDevice || (mode === "independent" && rand() < 0.5);
+		const factor = slow ? SLOW_FACTOR : 1;
+		return {
+			phase,
+			slow,
+			ms: Math.round((min + rand() * (max - min)) * factor),
+		};
+	});
+	// The app knows its device, so the hidden factor can be a segment; per-phase factors cannot.
+	const segment =
+		mode === "high-variance" ? (slowDevice ? "slow" : "fast") : undefined;
+	return { segment, durations };
 }
 
 // What a typical progress bar does: equal weight per phase, ETA by linear extrapolation.
@@ -32,23 +40,26 @@ export function naiveRemaining(
 	return Math.round((elapsedMs * (1 - progress)) / progress);
 }
 
-export type Tick = {
-	elapsedMs: number;
-	crowdbar: number | null;
-	naive: number | null;
-};
+export type Tick = { elapsedMs: number; etas: Record<string, number | null> };
 
-// Mean absolute ETA error as a share of the run's real duration, over ticks where both bars show an ETA.
-export function compareRun(ticks: Tick[], totalMs: number) {
-	const both = ticks.filter((t) => t.crowdbar !== null && t.naive !== null);
-	if (both.length === 0) return null;
-	const meanError = (eta: (t: Tick) => number) =>
-		both.reduce(
-			(sum, t) => sum + Math.abs(eta(t) - (totalMs - t.elapsedMs)) / totalMs,
-			0,
-		) / both.length;
-	return {
-		crowdbar: meanError((t) => t.crowdbar as number),
-		naive: meanError((t) => t.naive as number),
-	};
+// Mean absolute ETA error of each bar as a share of the run's real duration, over ticks where every bar shows an ETA.
+export function compareRun(
+	ticks: Tick[],
+	totalMs: number,
+): Record<string, number> | null {
+	const all = ticks.filter((t) =>
+		Object.values(t.etas).every((e) => e !== null),
+	);
+	if (all.length === 0) return null;
+	return Object.fromEntries(
+		Object.keys(all[0].etas).map((bar) => [
+			bar,
+			all.reduce(
+				(sum, t) =>
+					sum +
+					Math.abs((t.etas[bar] as number) - (totalMs - t.elapsedMs)) / totalMs,
+				0,
+			) / all.length,
+		]),
+	);
 }

@@ -73,7 +73,7 @@ Passed on 2026-11-16 with a reorder. Mean ETA error over 30 runs: normal mode na
 
 ### Phase 1b: Context (pulled forward)
 
-- [ ] Task 10: Segmented estimates with global fallback
+- [x] Task 10: Segmented estimates with global fallback
 - [ ] Task 10b: Pace correction in the SDK (damped actual/estimated ratio scales remaining phases; SDK only)
 
 ### Checkpoint A2: Segments and pace correction measured, full table reviewed before Task 6
