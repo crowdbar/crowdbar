@@ -93,14 +93,14 @@ Package manager and script runner: **Bun** (never npm, pnpm or yarn). Commands a
 
 **Acceptance criteria:**
 
-- [ ] A complete run produces exactly one `POST /v1/runs` with a duration for every phase
-- [ ] With the API unreachable, the SDK throws nothing, exposes "no estimate", and the host code keeps running
-- [ ] Progress never goes backwards and never reaches 1 before `finish()`
+- [x] A complete run produces exactly one `POST /v1/runs` with a duration for every phase
+- [x] With the API unreachable, the SDK throws nothing, exposes "no estimate", and the host code keeps running
+- [x] Progress never goes backwards and never reaches 1 before `finish()`
 
 **Verification:**
 
-- [ ] Tests pass: `bun run --filter './packages/sdk' test`
-- [ ] Build succeeds: `bun run --filter './packages/sdk' build` (ESM output with types)
+- [x] Tests pass: `bun run --filter './packages/sdk' test`
+- [x] Build succeeds: `bun run --filter './packages/sdk' build` (ESM output with types)
 
 **Dependencies:** Task 3
 

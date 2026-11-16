@@ -64,7 +64,7 @@ The core loop (report → aggregate → estimate → SDK) has no dependency on a
 
 - [x] Task 2: Report a run and read an estimate for one bar
 - [x] Task 3: Histogram quantiles with a minimum-sample rule
-- [ ] Task 4: TypeScript SDK that reports phases and reads estimates
+- [x] Task 4: TypeScript SDK that reports phases and reads estimates
 - [ ] Task 5: Demo page comparing a Crowdbar bar with a naive bar
 
 ### Checkpoint A: Is the estimate good enough? (go / no-go)

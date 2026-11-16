@@ -41,6 +41,9 @@
     "packages/sdk": {
       "name": "crowdbar",
       "version": "0.0.0",
+      "devDependencies": {
+        "vitest": "^4.1.0",
+      },
     },
   },
   "packages": {
