@@ -14,6 +14,7 @@ const API =
 	import.meta.env.VITE_CROWDBAR_API ??
 	"https://main-crowdbar-api.nifle.workers.dev/v1";
 const TICK_MS = 100;
+const FAST_FORWARD = 5;
 
 type Result =
 	| { slow: boolean; seconds: number; crowdbar: number; naive: number }
@@ -41,18 +42,31 @@ const pct = (x: number) => `${Math.round(x * 100)}%`;
 const secs = (ms: number | null) =>
 	ms === null ? "—" : `${(ms / 1000).toFixed(1)} s`;
 
-async function runOnce(m: Mode) {
+// speed > 1 fast-forwards: all durations stay in job time, only the wait is shorter.
+async function runOnce(m: Mode, speed: number) {
 	const plan = planRun(m);
+	const clock = () => performance.now() * speed;
 	// A new client per run, so each run picks up the estimate that the previous runs produced.
-	const run = await new Crowdbar({ baseUrl: API }).start(`demo-${m}`);
+	const run = await new Crowdbar({ baseUrl: API, now: clock }).start(
+		`demo-${m}`,
+	);
 	const ticks: Tick[] = [];
 	let phasesDone = 0;
-	const start = performance.now();
-	const sample = () => {
-		const elapsedMs = performance.now() - start;
+	const start = clock();
+	const snapshot = () => {
+		const elapsedMs = clock() - start;
 		const p = run.progress();
 		const naiveEta = naiveRemaining(elapsedMs, phasesDone, PHASES.length);
+		return { elapsedMs, p, naiveEta };
+	};
+	// Score on a fixed real-time tick; draw on every animation frame so the bars move smoothly.
+	const timer = setInterval(() => {
+		const { elapsedMs, p, naiveEta } = snapshot();
 		ticks.push({ elapsedMs, crowdbar: p.remainingMs, naive: naiveEta });
+	}, TICK_MS);
+	let frame = 0;
+	const draw = () => {
+		const { p, naiveEta } = snapshot();
 		current = {
 			phase: PHASES[Math.min(phasesDone, PHASES.length - 1)].phase,
 			crowdbar: p.progress,
@@ -60,20 +74,21 @@ async function runOnce(m: Mode) {
 			naive: phasesDone / PHASES.length,
 			naiveEta,
 		};
+		frame = requestAnimationFrame(draw);
 	};
-	const timer = setInterval(sample, TICK_MS);
+	draw();
 	try {
 		for (const { phase, ms } of plan.durations) {
 			run.phase(phase);
-			sample();
-			await sleep(ms);
+			await sleep(ms / speed);
 			phasesDone++;
 		}
 	} finally {
 		clearInterval(timer);
+		cancelAnimationFrame(frame);
 		run.finish();
 	}
-	const totalMs = performance.now() - start;
+	const totalMs = clock() - start;
 	const errors = compareRun(ticks, totalMs);
 	const seconds = Math.round(totalMs / 100) / 10;
 	results[m].push(
@@ -84,13 +99,13 @@ async function runOnce(m: Mode) {
 	current = null;
 }
 
-async function runMany(n: number) {
+async function runMany(n: number, speed = 1) {
 	running = true;
 	remainingRuns = n;
 	const m = mode;
 	try {
 		while (remainingRuns > 0) {
-			await runOnce(m);
+			await runOnce(m, speed);
 			remainingRuns--;
 			// The SDK reports without waiting; give the report time to land before the next run reads the estimate.
 			if (remainingRuns > 0) await sleep(500);
@@ -123,7 +138,7 @@ async function runMany(n: number) {
 
 	<div class="flex gap-3">
 		<button class="rounded bg-black px-4 py-2 text-white disabled:opacity-50" disabled={running} onclick={() => runMany(1)}>Run the job</button>
-		<button class="rounded border px-4 py-2 disabled:opacity-50" disabled={running} onclick={() => runMany(10)}>Run 10 times</button>
+		<button class="rounded border px-4 py-2 disabled:opacity-50" disabled={running} onclick={() => runMany(10, FAST_FORWARD)}>Run 10 times ({FAST_FORWARD}× speed)</button>
 		{#if remainingRuns > 1}<button class="rounded border px-4 py-2" onclick={() => (remainingRuns = 1)}>Stop after this run</button>{/if}
 	</div>
 
@@ -135,7 +150,7 @@ async function runMany(n: number) {
 					<span>{pct(bar.value)} · ETA {secs(bar.eta)}</span>
 				</div>
 				<div class="h-4 overflow-hidden rounded bg-gray-200" role="progressbar" aria-label={bar.label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(bar.value * 100)}>
-					<div class="h-full bg-blue-600 transition-[width] duration-100" style:width={pct(bar.value)}></div>
+					<div class="h-full bg-blue-600" style:width={`${bar.value * 100}%`}></div>
 				</div>
 			</div>
 		{/each}
