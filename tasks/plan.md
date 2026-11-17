@@ -92,7 +92,7 @@ Passed on 2026-11-16: segments kept, pace correction dropped, Task 6 next.
 
 ### Phase 2: Projects, bars and phases
 
-- [ ] Task 6: Developer signs in and creates a project with a key
+- [x] Task 6: Developer signs in and creates a project with a key
 - [ ] Task 7: Developer defines bars and ordered phases
 - [ ] Task 8: API accepts only valid keys, bars and phases
 - [ ] Task 9: Dashboard shows per-phase stats for a bar
