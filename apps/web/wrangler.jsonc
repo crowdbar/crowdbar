@@ -9,5 +9,18 @@
 		"directory": ".svelte-kit/cloudflare"
 	},
 	"workers_dev": true,
-	"preview_urls": true
+	"preview_urls": true,
+	// Previews inherit no bindings or vars. Secrets are set with `wrangler preview base-config secret put`.
+	"previews": {
+		"vars": {
+			"BETTER_AUTH_URL": "https://main-crowdbar-web.nifle.workers.dev"
+		},
+		"d1_databases": [
+			{
+				"binding": "DB",
+				"database_name": "crowdbar-preview",
+				"database_id": "46a143c8-7126-4e24-8b67-92f770ea80d6"
+			}
+		]
+	}
 }
