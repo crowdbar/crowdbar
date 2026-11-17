@@ -10,6 +10,26 @@
 	},
 	"workers_dev": true,
 	"preview_urls": true,
+	// Overridden by previews.vars and, locally, by .dev.vars.
+	"vars": { "BETTER_AUTH_URL": "https://crowdbar.dev" },
+	// Names only, for type generation and local checks; values live in .dev.vars and Cloudflare secrets.
+	"secrets": {
+		"required": [
+			"BETTER_AUTH_SECRET",
+			"GITHUB_CLIENT_ID",
+			"GITHUB_CLIENT_SECRET",
+			"GOOGLE_CLIENT_ID",
+			"GOOGLE_CLIENT_SECRET"
+		]
+	},
+	// No database_id: local dev uses a local D1, and the production database is created at the first production deploy.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "crowdbar",
+			"migrations_dir": "../../packages/db/migrations"
+		}
+	],
 	// Previews inherit no bindings or vars. Secrets are set with `wrangler preview base-config secret put`.
 	"previews": {
 		"vars": {
@@ -19,7 +39,8 @@
 			{
 				"binding": "DB",
 				"database_name": "crowdbar-preview",
-				"database_id": "46a143c8-7126-4e24-8b67-92f770ea80d6"
+				"database_id": "46a143c8-7126-4e24-8b67-92f770ea80d6",
+				"migrations_dir": "../../packages/db/migrations"
 			}
 		]
 	}

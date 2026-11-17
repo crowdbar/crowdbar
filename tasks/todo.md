@@ -229,20 +229,20 @@ Figures (2026-11-16): mean ETA error as a share of run duration, averaged over 5
 
 **Acceptance criteria:**
 
-- [ ] A signed-out visitor is redirected to sign-in from any dashboard route
-- [ ] A signed-in developer can create a project and sees it, with its key, after reload
-- [ ] A developer cannot see or open another developer's project
+- [x] (checked in the hook, so form actions are covered; verified locally and on the preview) A signed-out visitor is redirected to sign-in from any dashboard route
+- [x] (db tests, plus seeded sessions against the local app; real OAuth sign-in pending the manual check) A signed-in developer can create a project and sees it, with its key, after reload
+- [x] (db tests, plus seeded sessions: 404 on another developer's project) A developer cannot see or open another developer's project
 
 **Verification:**
 
-- [ ] Tests pass: `bun run --filter './apps/web' test` and `bun run --filter './packages/db' test`
+- [x] Tests pass: `bun run --filter './apps/web' test` and `bun run --filter './packages/db' test`
 - [ ] Manual check: sign in with two accounts and confirm isolation
 
 **Dependencies:** Task 1 (Checkpoint A passed)
 
 **Files likely touched:**
 
-- `packages/db/src/schema.ts`, `packages/db/migrations/0001_auth_projects.sql`
+- `packages/db/src/schema.ts`, `packages/db/migrations/0000_auth_projects.sql`
 - `apps/web/src/lib/server/auth.ts`, `apps/web/src/hooks.server.ts`
 - `apps/web/src/routes/(app)/projects/+page.svelte`, `+page.server.ts`
 

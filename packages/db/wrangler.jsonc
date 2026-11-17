@@ -1,0 +1,14 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	// Not a Worker: only names the remote D1 databases that `bun run migrate:preview` applies migrations to.
+	"name": "crowdbar-db-migrations",
+	"compatibility_date": "2026-11-16",
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "crowdbar-preview",
+			"database_id": "46a143c8-7126-4e24-8b67-92f770ea80d6",
+			"migrations_dir": "migrations"
+		}
+	]
+}

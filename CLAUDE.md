@@ -10,11 +10,13 @@ Crowdsourced progress bar timing API. Apps report how long each phase of a job t
 
 ## Current state
 
-Tasks 1 to 5 and Task 10 (segments, pulled forward) are done. Task 10b (SDK pace correction) was measured and dropped; see `tasks/plan.md`. Next: Task 6. Run the demo locally with `VITE_CROWDBAR_API=http://localhost:8787/v1 bun run --filter './apps/web' dev`.
+Tasks 1 to 5 and Task 10 (segments, pulled forward) are done. Task 10b (SDK pace correction) was measured and dropped; see `tasks/plan.md`. Task 6 (sign-in and projects) is built; the two-account manual check is pending. Run the demo locally with `VITE_CROWDBAR_API=http://localhost:8787/v1 bun run --filter './apps/web' dev`.
 
 Web: SvelteKit 3 configured in `apps/web/vite.config.ts` (no `svelte.config.js`), imports from `src/lib` use `#lib/<file>.js`. Workspace packages export a `source` condition pointing at their TypeScript, which the web app resolves, so no prior build is needed.
 
-Preview deploys: `bunx wrangler preview` from `apps/api` (or `bun run --filter './apps/api' deploy:preview`); the `main` preview is at `https://main-crowdbar-api.nifle.workers.dev`. Never run `wrangler deploy` without asking: it attaches the production custom domain `api.crowdbar.dev`.
+Database: schema in `packages/db/src/schema.ts` (Better Auth tables come from `bunx auth@latest generate`). After a schema change run `bun run --filter './packages/db' generate`, then `bun run --filter './apps/web' db:migrate:local` and `bun run --filter './packages/db' migrate:preview`. The web app reads bindings with `import { env } from "cloudflare:workers"` (not `event.platform`). Secrets: names in `apps/web/wrangler.jsonc` `secrets.required`, values in `apps/web/.dev.vars` locally and in Preview secrets; sessions never store IP or user agent.
+
+Preview deploys: `bunx wrangler preview` from `apps/api` (or `bun run --filter './apps/api' deploy:preview`); the `main` preview is at `https://main-crowdbar-api.nifle.workers.dev`. The web app: `bun run --filter './apps/web' deploy:preview`, at `https://main-crowdbar-web.nifle.workers.dev` (OAuth callbacks are registered for this URL only). Never run `wrangler deploy` without asking: it attaches the production custom domain `api.crowdbar.dev`.
 
 Lint is Biome (`bun run lint`). Worker tests use `@cloudflare/vitest-plugin` (the successor to `@cloudflare/vitest-pool-workers`) with `exports` from `cloudflare:workers`.
 
