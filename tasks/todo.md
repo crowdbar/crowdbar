@@ -119,7 +119,7 @@ Package manager and script runner: **Bun** (never npm, pnpm or yarn). Commands a
 
 - [x] From the second run onwards, the Crowdbar bar's mean ETA error is displayed next to the naive bar's
 - [x] The simulation has a "high variance" mode where the sleep ranges depend on a hidden factor (for example a "slow device" flag that triples them), to expose the context problem
-- [ ] (works against a local API; pending a preview redeploy of the API with the Durable Object) The page works against the deployed preview API
+- [x] (preview API redeployed 2026-11-18; segment estimates served there) The page works against the deployed preview API
 
 **Verification:**
 
