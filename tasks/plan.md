@@ -42,6 +42,8 @@ Crowdbar is a crowdsourced progress bar timing API. A developer creates a projec
 - **The SDK never blocks the host app.** Local cache, safe fallback, fire-and-forget reports.
 - **Bun installs and runs scripts; Vitest runs tests.** The Workers Vitest pool is needed to test Durable Objects and D1, and it does not run under `bun test`. Wrangler itself runs fine when launched through Bun.
 
+- **Deploys run from GitHub Actions, never from a laptop or Cloudflare's Git integration** (owner decision, 2026-11-18). Staging deploys on every green push to `main`; production deploys the same commit only on a manual run approved in the GitHub `production` environment. Each environment is a Wrangler environment with its own Workers and D1 database, and migrations run before the API deploys.
+
 ## Dependency Graph
 
 ```
@@ -96,6 +98,7 @@ Passed on 2026-11-16: segments kept, pace correction dropped, Task 6 next.
 - [x] Task 7: Developer defines bars and ordered phases
 - [ ] Task 8: API accepts only valid keys, bars and phases
 - [ ] Task 9: Dashboard shows per-phase stats for a bar
+- [ ] Task 9b: Automatic deployment from GitHub (owner request: staging on every push to `main`, production on manual approval)
 
 ### Checkpoint B: End-to-end with a real project
 
@@ -122,6 +125,7 @@ Passed on 2026-11-16: segments kept, pace correction dropped, Task 6 next.
 - Tasks 11 and 12 are independent of each other; Task 13 needs Task 11.
 - Tasks 14 and 15 are independent of each other.
 - Task 8 needs both Task 2 and Task 7.
+- Task 9b (deployment) needs Task 8 and owner setup on Cloudflare and GitHub; it is independent of Task 9.
 
 ## Risks and Mitigations
 

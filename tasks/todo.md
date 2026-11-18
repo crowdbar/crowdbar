@@ -324,6 +324,31 @@ Figures (2026-11-16): mean ETA error as a share of run duration, averaged over 5
 
 **Estimated scope:** Small
 
+## Task 9b: Automatic deployment from GitHub
+
+**Description:** GitHub Actions deploys both Workers after lint, typecheck, test and build pass in the same workflow (not Cloudflare's dashboard Git integration). Two Wrangler environments, `staging` and `production`, each with its own Workers and D1 database. Every push to `main` applies pending D1 migrations to staging, then deploys the API Worker, then the web Worker, at `api.staging.crowdbar.dev` and `staging.crowdbar.dev`. Production runs the same steps on a manual `workflow_dispatch`, gated by a GitHub `production` environment with the owner as required reviewer, at `api.crowdbar.dev` and `crowdbar.dev`. Pull requests run the checks only and never deploy. Deploys use `cloudflare/wrangler-action@v4` with `packageManager: bun`. Previews (`wrangler preview`) stay as they are.
+
+**Acceptance criteria:**
+
+- [ ] A push to `main` with a failing test deploys nothing
+- [ ] A push to `main` with passing checks updates staging, and `curl https://api.staging.crowdbar.dev/v1/health` returns `200`
+- [ ] Production cannot deploy without the owner's approval in GitHub
+
+**Verification:**
+
+- [ ] Push a commit with a deliberately failing test on a throwaway branch merged to `main` (or observe a real failure) and confirm the deploy jobs are skipped
+- [ ] After a green push, staging health returns `200` and sign-in works on `staging.crowdbar.dev`
+- [ ] Trigger the production workflow and confirm it waits for approval
+
+**Dependencies:** Task 8. Owner setup first: Cloudflare API token, GitHub secrets and environments, staging and production OAuth callbacks, production D1 database.
+
+**Files likely touched:**
+
+- `.github/workflows/ci.yml` (checks, then staging deploy) and `.github/workflows/deploy-production.yml`
+- `apps/api/wrangler.jsonc`, `apps/web/wrangler.jsonc` (`env.staging`, `env.production`)
+
+**Estimated scope:** Medium
+
 ## Checkpoint B: End-to-end with a real project
 
 - [ ] All tests pass, all packages build
