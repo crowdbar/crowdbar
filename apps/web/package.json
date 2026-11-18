@@ -33,6 +33,7 @@
 	},
 	"dependencies": {
 		"@better-auth/drizzle-adapter": "^1.7.25",
+		"@crowdbar/core": "workspace:*",
 		"@crowdbar/db": "workspace:*",
 		"better-auth": "^1.7.25",
 		"crowdbar": "workspace:*",

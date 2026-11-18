@@ -1,5 +1,6 @@
 <script lang="ts">
 import { Crowdbar } from "crowdbar";
+import { localApi } from "#lib/local-api.js";
 import {
 	compareRun,
 	type Mode,
@@ -34,6 +35,8 @@ type Result = {
 };
 
 let mode = $state<Mode>("normal");
+// "local" starts every visitor from zero, so the bar visibly learns; "shared" uses everyone's runs.
+let source = $state<"local" | "shared">("local");
 let running = $state(false);
 let remainingRuns = $state(0);
 let current = $state<{
@@ -63,7 +66,10 @@ const secs = (ms: number | null) =>
 async function runOnce(m: Mode, speed: number) {
 	const plan = planRun(m);
 	const clock = () => performance.now() * speed;
-	const options = { key: KEY, baseUrl: API, now: clock };
+	const options =
+		source === "local"
+			? { key: "local", fetch: localApi(localStorage).fetch, now: clock }
+			: { key: KEY, baseUrl: API, now: clock };
 	const bar = `demo-${m}`;
 	// New clients per run, so each run picks up the estimate that the previous runs produced.
 	const [crowdbar, segmented] = await Promise.all([
@@ -134,6 +140,15 @@ async function runOnce(m: Mode, speed: number) {
 	current = null;
 }
 
+function clearResults() {
+	results = { normal: [], "high-variance": [], independent: [] };
+}
+
+function resetLocal() {
+	localApi(localStorage).reset();
+	clearResults();
+}
+
 async function runMany(n: number, speed = 1) {
 	running = true;
 	remainingRuns = n;
@@ -159,11 +174,20 @@ async function runMany(n: number, speed = 1) {
 		<h1 class="text-3xl font-bold">Crowdbar demo</h1>
 		<p class="text-gray-700">
 			A fake job runs three phases ({PHASES.map((p) => `${p.phase} ${p.min / 1000}–${p.max / 1000} s`).join(", ")}). The naive bar gives each
-			phase an equal share and extrapolates its ETA. The Crowdbar bar uses durations reported by every previous run, including other visitors'.
+			phase an equal share and extrapolates its ETA. The Crowdbar bar uses durations reported by previous runs: by default only yours, stored in this browser, so you can watch it learn from zero.
 		</p>
 	</header>
 
-	{#if !KEY}
+	<fieldset class="flex flex-wrap gap-4" disabled={running}>
+		<legend class="mb-2 font-semibold">Runs used for estimates</legend>
+		<label class="flex items-center gap-2"><input type="radio" bind:group={source} value="local" onchange={clearResults} /> Just yours (stored in this browser)</label>
+		<label class="flex items-center gap-2">
+			<input type="radio" bind:group={source} value="shared" onchange={clearResults} disabled={!KEY} /> Everyone's (the live Crowdbar API)
+		</label>
+		{#if source === "local"}<button type="button" class="rounded border px-3 py-1 text-sm" onclick={resetLocal}>Forget my runs</button>{/if}
+	</fieldset>
+
+	{#if source === "shared" && !KEY}
 		<p role="alert" class="rounded border border-amber-400 bg-amber-50 p-3 text-sm">
 			No project key set, so the Crowdbar bars never get an estimate. Create a project with the bars
 			{MODES.map((m) => `demo-${m}`).join(", ")}, each with the phases {PHASES.map((p) => p.phase).join(", ")}, then build with
