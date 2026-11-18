@@ -261,7 +261,7 @@ Figures (2026-11-16): mean ETA error as a share of run duration, averaged over 5
 **Verification:**
 
 - [x] Tests pass: `bun run --filter './apps/web' test` (and `./packages/db`)
-- [ ] Manual check: create a bar with three phases, reorder, reload
+- [x] Manual check: create a bar with three phases, reorder, reload (confirmed on the preview, 2026-11-18)
 
 **Dependencies:** Task 6
 
