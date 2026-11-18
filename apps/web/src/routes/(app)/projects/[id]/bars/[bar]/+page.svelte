@@ -1,8 +1,17 @@
 <script lang="ts">
+import { untrack } from "svelte";
 import { sdkSnippet } from "#lib/sdk-snippet.js";
+import { slugify } from "#lib/slugify.js";
 import { enhance } from "$app/forms";
 
 let { data, form } = $props();
+
+// The new phase's slug follows its name until the developer types in the slug field (or clears it again).
+// Seeded once from a failed no-JS submission; afterwards the input owns it.
+let phaseSlug = $state(
+	untrack(() => (form?.action === "addPhase" ? form.slug : "")),
+);
+let phaseSlugEdited = untrack(() => phaseSlug !== "");
 
 const snippet = $derived(
 	sdkSnippet(
@@ -57,14 +66,25 @@ const errorFor = (action: string) =>
 	{/if}
 	{#if errorFor("renamePhase")}<p class="text-sm text-red-700">{errorFor("renamePhase")}</p>{/if}
 
-	<form method="POST" action="?/addPhase" use:enhance class="flex flex-wrap items-end gap-3">
+	<form
+		method="POST"
+		action="?/addPhase"
+		use:enhance={() =>
+			async ({ result, update }) => {
+				if (result.type === "success") {
+					phaseSlug = "";
+					phaseSlugEdited = false;
+				}
+				await update();
+			}}
+		class="flex flex-wrap items-end gap-3">
 		<label class="flex-1">
 			<span class="block text-sm">Phase name</span>
-			<input name="name" required maxlength="100" placeholder="Decode" value={form?.action === "addPhase" ? form.name : ""} class="w-full rounded border px-3 py-2" />
+			<input name="name" required maxlength="100" placeholder="Decode" value={form?.action === "addPhase" ? form.name : ""} oninput={(e) => { if (!phaseSlugEdited) phaseSlug = slugify(e.currentTarget.value); }} class="w-full rounded border px-3 py-2" />
 		</label>
 		<label class="flex-1">
 			<span class="block text-sm">Slug (used in the SDK)</span>
-			<input name="slug" required maxlength="64" pattern="[a-z0-9][a-z0-9_\-]*" placeholder="decode" value={form?.action === "addPhase" ? form.slug : ""} class="w-full rounded border px-3 py-2 font-mono" aria-invalid={errorFor("addPhase") ? "true" : undefined} aria-describedby={errorFor("addPhase") ? "phase-error" : undefined} />
+			<input name="slug" required maxlength="64" pattern="[a-z0-9][a-z0-9_\-]*" placeholder="decode" value={phaseSlug} oninput={(e) => { phaseSlug = e.currentTarget.value; phaseSlugEdited = phaseSlug !== ""; }} class="w-full rounded border px-3 py-2 font-mono" aria-invalid={errorFor("addPhase") ? "true" : undefined} aria-describedby={errorFor("addPhase") ? "phase-error" : undefined} />
 		</label>
 		<button class="rounded bg-black px-4 py-2 text-white">Add phase</button>
 	</form>

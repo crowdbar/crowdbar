@@ -1,7 +1,14 @@
 <script lang="ts">
+import { untrack } from "svelte";
+import { slugify } from "#lib/slugify.js";
 import { enhance } from "$app/forms";
 
 let { data, form } = $props();
+
+// The slug follows the name until the developer types in the slug field (or clears it again).
+// Seeded once from a failed no-JS submission; afterwards the input owns it.
+let slug = $state(untrack(() => form?.slug ?? ""));
+let slugEdited = untrack(() => slug !== "");
 </script>
 
 <svelte:head><title>{data.project.name} · Crowdbar</title></svelte:head>
@@ -19,11 +26,11 @@ let { data, form } = $props();
 	<form method="POST" action="?/createBar" use:enhance class="flex flex-wrap items-end gap-3">
 		<label class="flex-1">
 			<span class="block text-sm">Name</span>
-			<input name="name" required maxlength="100" placeholder="Video export" value={form?.name ?? ""} class="w-full rounded border px-3 py-2" />
+			<input name="name" required maxlength="100" placeholder="Video export" value={form?.name ?? ""} oninput={(e) => { if (!slugEdited) slug = slugify(e.currentTarget.value); }} class="w-full rounded border px-3 py-2" />
 		</label>
 		<label class="flex-1">
 			<span class="block text-sm">Slug (used in the SDK)</span>
-			<input name="slug" required maxlength="64" pattern="[a-z0-9][a-z0-9_\-]*" placeholder="video-export" value={form?.slug ?? ""} class="w-full rounded border px-3 py-2 font-mono" aria-invalid={form?.error ? "true" : undefined} aria-describedby={form?.error ? "bar-error" : undefined} />
+			<input name="slug" required maxlength="64" pattern="[a-z0-9][a-z0-9_\-]*" placeholder="video-export" value={slug} oninput={(e) => { slug = e.currentTarget.value; slugEdited = slug !== ""; }} class="w-full rounded border px-3 py-2 font-mono" aria-invalid={form?.error ? "true" : undefined} aria-describedby={form?.error ? "bar-error" : undefined} />
 		</label>
 		<button class="rounded bg-black px-4 py-2 text-white">Add bar</button>
 	</form>
