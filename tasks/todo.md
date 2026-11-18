@@ -254,22 +254,22 @@ Figures (2026-11-16): mean ETA error as a share of run duration, averaged over 5
 
 **Acceptance criteria:**
 
-- [ ] Bar slugs are unique within a project and phase slugs unique within a bar; duplicates show a form error
-- [ ] Phase order and the bar's minimum-runs setting persist after reload
-- [ ] The bar page shows a copyable SDK snippet with the project key, bar slug and phase slugs filled in
+- [x] (db tests and local end-to-end; slugs are 1 to 64 of `a-z 0-9 - _`, starting with a letter or digit) Bar slugs are unique within a project and phase slugs unique within a bar; duplicates show a form error
+- [x] (db tests and local end-to-end; reorder is move up/down, rename changes the name but never the slug) Phase order and the bar's minimum-runs setting persist after reload
+- [x] (`sdkSnippet` unit tests and local end-to-end) The bar page shows a copyable SDK snippet with the project key, bar slug and phase slugs filled in
 
 **Verification:**
 
-- [ ] Tests pass: `bun run --filter './apps/web' test`
+- [x] Tests pass: `bun run --filter './apps/web' test` (and `./packages/db`)
 - [ ] Manual check: create a bar with three phases, reorder, reload
 
 **Dependencies:** Task 6
 
 **Files likely touched:**
 
-- `packages/db/src/schema.ts`, `packages/db/migrations/0002_bars_phases.sql`
-- `apps/web/src/routes/(app)/projects/[project]/+page.svelte`, `+page.server.ts`
-- `apps/web/src/routes/(app)/projects/[project]/bars/[bar]/+page.svelte`, `+page.server.ts`
+- `packages/db/src/schema.ts`, `packages/db/migrations/0001_bars_phases.sql`
+- `apps/web/src/routes/(app)/projects/[id]/+page.svelte`, `+page.server.ts`
+- `apps/web/src/routes/(app)/projects/[id]/bars/[bar]/+page.svelte`, `+page.server.ts`
 
 **Estimated scope:** Medium
 
