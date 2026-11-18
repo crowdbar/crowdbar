@@ -1,22 +1,20 @@
-import { env, exports } from "cloudflare:workers";
+import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import { MAX_SEGMENTS } from "../src/bar-object";
+import { seedProject } from "./seed";
 
-const base = "https://api.crowdbar.dev/v1";
+const seeded = await seedProject(
+	Object.fromEntries(
+		["seg-a", "seg-b", "seg-c", "seg-d"].map((b) => [b, ["a"]]),
+	),
+);
 
 function postRun(bar: string, ms: number, segment?: string) {
-	return exports.default.fetch(`${base}/runs`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ bar, segment, phases: [{ phase: "a", ms }] }),
-	});
+	return seeded.postRun({ bar, segment, phases: [{ phase: "a", ms }] });
 }
 
 async function estimate(bar: string, segment?: string) {
-	const query = segment === undefined ? "" : `?segment=${segment}`;
-	const res = await exports.default.fetch(
-		`${base}/bars/${bar}/estimate${query}`,
-	);
+	const res = await seeded.getEstimate(bar, segment);
 	expect(res.status).toBe(200);
 	return res.json() as Promise<{
 		segment: string | null;
@@ -53,7 +51,7 @@ describe("segments", () => {
 		expect(res.phases[0].samples).toBe(1);
 
 		await postRun("seg-b", 100, "rare");
-		const stub = env.BAR.getByName("seg-b");
+		const stub = env.BAR.getByName(seeded.barIds["seg-b"]);
 		expect(await stub.estimate("rare", 2)).toMatchObject({ fallback: true });
 		expect(await stub.estimate("rare", 1)).toMatchObject({ fallback: false });
 	});
@@ -75,21 +73,16 @@ describe("segments", () => {
 		["not a string", 3],
 		["too long", "x".repeat(65)],
 	])("rejects a %s segment on report with 400", async (_, segment) => {
-		const res = await exports.default.fetch(`${base}/runs`, {
-			method: "POST",
-			body: JSON.stringify({
-				bar: "seg-d",
-				segment,
-				phases: [{ phase: "a", ms: 1 }],
-			}),
+		const res = await seeded.postRun({
+			bar: "seg-d",
+			segment,
+			phases: [{ phase: "a", ms: 1 }],
 		});
 		expect(res.status).toBe(400);
 	});
 
 	it("rejects an invalid segment on estimate with 400", async () => {
-		const res = await exports.default.fetch(
-			`${base}/bars/seg-d/estimate?segment=${"x".repeat(65)}`,
-		);
+		const res = await seeded.getEstimate("seg-d", "x".repeat(65));
 		expect(res.status).toBe(400);
 	});
 });

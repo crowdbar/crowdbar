@@ -13,6 +13,9 @@ import {
 const API =
 	import.meta.env.VITE_CROWDBAR_API ??
 	"https://main-crowdbar-api.nifle.workers.dev/v1";
+// A public key, baked in at build time; the project needs the bars listed in the notice below.
+const KEY = import.meta.env.VITE_CROWDBAR_KEY ?? "";
+const MODES: Mode[] = ["normal", "high-variance", "independent"];
 const TICK_MS = 100;
 const FAST_FORWARD = 5;
 
@@ -60,7 +63,7 @@ const secs = (ms: number | null) =>
 async function runOnce(m: Mode, speed: number) {
 	const plan = planRun(m);
 	const clock = () => performance.now() * speed;
-	const options = { baseUrl: API, now: clock };
+	const options = { key: KEY, baseUrl: API, now: clock };
 	const bar = `demo-${m}`;
 	// New clients per run, so each run picks up the estimate that the previous runs produced.
 	const [crowdbar, segmented] = await Promise.all([
@@ -159,6 +162,14 @@ async function runMany(n: number, speed = 1) {
 			phase an equal share and extrapolates its ETA. The Crowdbar bar uses durations reported by every previous run, including other visitors'.
 		</p>
 	</header>
+
+	{#if !KEY}
+		<p role="alert" class="rounded border border-amber-400 bg-amber-50 p-3 text-sm">
+			No project key set, so the Crowdbar bars never get an estimate. Create a project with the bars
+			{MODES.map((m) => `demo-${m}`).join(", ")}, each with the phases {PHASES.map((p) => p.phase).join(", ")}, then build with
+			<code>VITE_CROWDBAR_KEY=&lt;its public key&gt;</code>.
+		</p>
+	{/if}
 
 	<fieldset class="flex flex-wrap gap-4" disabled={running}>
 		<legend class="mb-2 font-semibold">Mode</legend>

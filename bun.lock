@@ -14,6 +14,8 @@
       "version": "0.0.0",
       "dependencies": {
         "@crowdbar/core": "workspace:*",
+        "@crowdbar/db": "workspace:*",
+        "drizzle-orm": "^0.45.4",
         "hono": "^4.13.19",
       },
       "devDependencies": {

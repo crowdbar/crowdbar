@@ -279,13 +279,13 @@ Figures (2026-11-16): mean ETA error as a share of run duration, averaged over 5
 
 **Acceptance criteria:**
 
-- [ ] Unknown key returns `401`; unknown bar returns `404`; phases that do not match the definition return `422`
-- [ ] Two projects with the same bar slug have fully separate estimates
-- [ ] The demo page works with a real project created in the dashboard
+- [x] (`test/validation.test.ts`; a run may skip defined phases but never report an undefined one; durations must be 0 ms to 7 days, else `422`) Unknown key returns `401`; unknown bar returns `404`; phases that do not match the definition return `422`
+- [x] (the Durable Object is addressed by bar id) Two projects with the same bar slug have fully separate estimates
+- [ ] (pending the manual check; the demo reads the key from `VITE_CROWDBAR_KEY`) The demo page works with a real project created in the dashboard
 
 **Verification:**
 
-- [ ] Tests pass: `bun run --filter './apps/api' test` and `bun run --filter './packages/sdk' test`
+- [x] Tests pass: `bun run --filter './apps/api' test` and `bun run --filter './packages/sdk' test`
 - [ ] Manual check: run the demo against a dashboard-created project
 
 **Dependencies:** Task 2, Task 7

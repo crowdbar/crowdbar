@@ -5,6 +5,8 @@ import {
 	createBar,
 	createDb,
 	createProject,
+	findBar,
+	findProjectByKey,
 	getBar,
 	listBars,
 	movePhase,
@@ -147,5 +149,28 @@ describe("phases", () => {
 		await expect(renamePhase(db, "carol", phase.id, " ")).rejects.toThrow(
 			RangeError,
 		);
+	});
+});
+
+describe("API lookups", () => {
+	it("finds a project by its public key and a bar with its phases in order", async () => {
+		const project = await createProject(db, "carol", "Keyed");
+		const bar = await createBar(db, "carol", project.id, {
+			name: "Lookup",
+			slug: "lookup",
+		});
+		for (const p of ["b", "a"])
+			await addPhase(db, "carol", bar.id, { name: p, slug: p });
+
+		expect((await findProjectByKey(db, project.publicKey))?.id).toBe(
+			project.id,
+		);
+		expect(await findProjectByKey(db, "cb_pub_unknown")).toBeUndefined();
+
+		const found = await findBar(db, project.id, "lookup");
+		expect(found?.id).toBe(bar.id);
+		expect(found?.phases.map((p) => p.slug)).toEqual(["b", "a"]);
+		// A bar is only found inside its own project.
+		expect(await findBar(db, projectId, "lookup")).toBeUndefined();
 	});
 });

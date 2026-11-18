@@ -5,15 +5,17 @@
 	"license": "AGPL-3.0-only",
 	"type": "module",
 	"scripts": {
-		"dev": "wrangler dev",
+		"dev": "wrangler dev --persist-to ../web/.wrangler/state",
 		"build": "wrangler deploy --dry-run --outdir dist",
 		"typecheck": "wrangler types && tsc --noEmit",
 		"test": "vitest run",
 		"deploy:preview": "wrangler preview"
 	},
 	"dependencies": {
-		"hono": "^4.13.19",
-		"@crowdbar/core": "workspace:*"
+		"@crowdbar/core": "workspace:*",
+		"@crowdbar/db": "workspace:*",
+		"drizzle-orm": "^0.45.4",
+		"hono": "^4.13.19"
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-plugin": "^1.8.3",

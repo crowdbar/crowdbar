@@ -59,6 +59,15 @@ describe("Crowdbar", () => {
 		});
 	});
 
+	it("sends the key on estimate requests too", async () => {
+		const { crowdbar, fetch } = setup(ok);
+		await crowdbar.start("export");
+		const [, init] = fetch.mock.calls[0];
+		expect(new Headers(init?.headers).get("Authorization")).toBe(
+			"Bearer cb_pub_test",
+		);
+	});
+
 	it("reuses the cached estimate for the next run", async () => {
 		const { crowdbar, fetch } = setup(ok);
 		await crowdbar.start("export");
@@ -104,6 +113,7 @@ describe("Crowdbar", () => {
 
 	it("does not wait long for a slow API", async () => {
 		const fast = new Crowdbar({
+			key: "cb_pub_test",
 			baseUrl: "https://api.test/v1",
 			fetch: (_input, init) =>
 				new Promise((_, reject) =>

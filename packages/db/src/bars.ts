@@ -89,6 +89,19 @@ export async function getBar(
 	slug: string,
 ) {
 	if (!(await getProject(db, ownerId, projectId))) return undefined;
+	return findBar(db, projectId, slug);
+}
+
+// Unscoped lookups for the public API, which knows a project only by its key.
+export async function findProjectByKey(db: Db, publicKey: string) {
+	const [found] = await db
+		.select()
+		.from(schema.project)
+		.where(eq(schema.project.publicKey, publicKey));
+	return found;
+}
+
+export async function findBar(db: Db, projectId: string, slug: string) {
 	const [found] = await db
 		.select()
 		.from(schema.bar)

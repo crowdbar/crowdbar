@@ -11,10 +11,26 @@
 		"bindings": [{ "name": "BAR", "class_name": "BarObject" }]
 	},
 	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["BarObject"] }],
+	// Projects, bars and phases, written by the dashboard. No id yet: production D1 is created at first deploy.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "crowdbar",
+			"migrations_dir": "../../packages/db/migrations"
+		}
+	],
 	// Previews inherit no bindings; each Preview gets its own Durable Object storage.
 	"previews": {
 		"durable_objects": {
 			"bindings": [{ "name": "BAR", "class_name": "BarObject" }]
-		}
+		},
+		"d1_databases": [
+			{
+				"binding": "DB",
+				"database_name": "crowdbar-preview",
+				"database_id": "46a143c8-7126-4e24-8b67-92f770ea80d6",
+				"migrations_dir": "../../packages/db/migrations"
+			}
+		]
 	}
 }

@@ -1,19 +1,21 @@
 import { evictDurableObject } from "cloudflare:test";
 import { env, exports } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
+import { base, seedProject } from "./seed";
 
-const base = "https://api.crowdbar.dev/v1";
-
-function postRun(body: unknown) {
-	return exports.default.fetch(`${base}/runs`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: typeof body === "string" ? body : JSON.stringify(body),
-	});
-}
+const { postRun, getEstimate, barIds } = await seedProject({
+	"export-a": ["decode", "encode"],
+	"export-b": ["decode", "encode"],
+	...Object.fromEntries(
+		["b", "export-c", "export-d", "export-e", "export-f"].map((b) => [
+			b,
+			["a"],
+		]),
+	),
+});
 
 async function estimate(bar: string) {
-	const res = await exports.default.fetch(`${base}/bars/${bar}/estimate`);
+	const res = await getEstimate(bar);
 	expect(res.status).toBe(200);
 	return res.json() as Promise<{
 		ready: boolean;
@@ -67,7 +69,6 @@ describe("core loop", () => {
 		["missing bar", { phases: [{ phase: "a", ms: 1 }] }],
 		["missing phases", { bar: "b" }],
 		["empty phases", { bar: "b", phases: [] }],
-		["negative duration", { bar: "b", phases: [{ phase: "a", ms: -1 }] }],
 		["non-numeric duration", { bar: "b", phases: [{ phase: "a", ms: "12" }] }],
 		["missing phase name", { bar: "b", phases: [{ ms: 1 }] }],
 		[
@@ -94,7 +95,7 @@ describe("core loop", () => {
 
 	it("keeps state after the Durable Object restarts", async () => {
 		await postRun({ bar: "export-d", phases: [{ phase: "a", ms: 40 }] });
-		await evictDurableObject(env.BAR.getByName("export-d"));
+		await evictDurableObject(env.BAR.getByName(barIds["export-d"]));
 		const d = await estimate("export-d");
 		expect(d.ready).toBe(true);
 		expect(d.phases[0].samples).toBe(1);
@@ -105,7 +106,7 @@ describe("core loop", () => {
 		for (const ms of [10, 20]) {
 			await postRun({ bar: "export-e", phases: [{ phase: "a", ms }] });
 		}
-		const stub = env.BAR.getByName("export-e");
+		const stub = env.BAR.getByName(barIds["export-e"]);
 		expect(await stub.estimate(null, 3)).toMatchObject({
 			ready: false,
 			phases: [],

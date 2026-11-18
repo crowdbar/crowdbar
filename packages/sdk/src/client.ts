@@ -5,7 +5,8 @@ import {
 } from "./progress.js";
 
 export type CrowdbarOptions = {
-	key?: string;
+	// The project's public key from the dashboard; the API rejects requests without one.
+	key: string;
 	baseUrl?: string;
 	// How long start() waits for an estimate before giving up.
 	timeoutMs?: number;
@@ -18,7 +19,7 @@ export type StartOptions = { segment?: string };
 const LISTENER_INTERVAL_MS = 100;
 
 export class Crowdbar {
-	private readonly key?: string;
+	private readonly key: string;
 	private readonly baseUrl: string;
 	private readonly timeoutMs: number;
 	private readonly fetch: typeof fetch;
@@ -26,7 +27,7 @@ export class Crowdbar {
 	// shortcut: in-memory only, lost on page reload; persist (e.g. localStorage) if cold starts matter.
 	private readonly cache = new Map<string, EstimatePhase[]>();
 
-	constructor(options: CrowdbarOptions = {}) {
+	constructor(options: CrowdbarOptions) {
 		this.key = options.key;
 		this.baseUrl = (options.baseUrl ?? "https://api.crowdbar.dev/v1").replace(
 			/\/$/,
@@ -85,7 +86,7 @@ export class Crowdbar {
 	}
 
 	private headers(): Record<string, string> {
-		return this.key ? { Authorization: `Bearer ${this.key}` } : {};
+		return { Authorization: `Bearer ${this.key}` };
 	}
 }
 
