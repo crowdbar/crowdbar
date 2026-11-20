@@ -46,23 +46,29 @@ app.post("/runs", async (c) => {
 	};
 	const found = await findBar(c.var.db, c.var.project.id, bar);
 	if (!found) return c.json({ error: `Unknown bar "${bar}"` }, 404);
+	// Undefined phases are ignored, not rejected, so a renamed or removed phase never costs older app versions whole runs.
 	const defined = new Set(found.phases.map((p) => p.slug));
-	for (const { phase, ms } of phases) {
-		// A run may skip phases, but never report one the bar does not define.
-		if (!defined.has(phase))
-			return c.json({ error: `Bar "${bar}" has no phase "${phase}"` }, 422);
+	const counted = phases.filter((p) => defined.has(p.phase));
+	const ignored = phases
+		.filter((p) => !defined.has(p.phase))
+		.map((p) => p.phase);
+	if (counted.length === 0)
+		return c.json(
+			{ error: `Bar "${bar}" defines none of: ${ignored.join(", ")}` },
+			422,
+		);
+	for (const { phase, ms } of counted)
 		if (ms < 0 || ms > MAX_PHASE_MS)
 			return c.json(
 				{ error: `Phase "${phase}" must take 0 to ${MAX_PHASE_MS} ms` },
 				422,
 			);
-	}
 	// Addressed by bar id, so two projects with the same slug never share histograms.
 	await c.env.BAR.getByName(found.id).report(
-		phases.map(({ phase, ms }) => ({ phase, ms })),
+		counted.map(({ phase, ms }) => ({ phase, ms })),
 		segment ?? null,
 	);
-	return c.body(null, 202);
+	return c.json({ ignored }, 202);
 });
 
 app.get("/bars/:bar/estimate", async (c) => {

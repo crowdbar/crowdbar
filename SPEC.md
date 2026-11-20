@@ -42,7 +42,17 @@ Base URL: `https://api.crowdbar.dev/v1`. **Decided** (domain). JSON in and out. 
 }
 ```
 
-Responses: `202` accepted; `400` malformed body; `401` unknown key; `404` unknown bar; `422` phases do not match the bar or a duration is out of bounds; `429` rate limited.
+Rules for the phases of a run:
+
+- A run may skip phases the bar defines; only the phases it reports are counted.
+- Phases the bar does not define are ignored, not rejected, and the `202` response lists them, so renaming or removing a phase in the dashboard never makes older app versions lose whole runs. Both SDKs log one console warning per bar when a response lists ignored phases, so typos stay visible.
+- Each counted phase's duration must be from 0 ms to 7 days (604,800,000 ms).
+
+```json
+{ "ignored": ["resize"] }
+```
+
+Responses: `202` accepted, with `ignored` (empty when every phase is known); `400` malformed body; `401` unknown key; `404` unknown bar; `422` no reported phase is defined by the bar, or a counted duration is out of bounds; `429` rate limited.
 
 ### Read an estimate
 

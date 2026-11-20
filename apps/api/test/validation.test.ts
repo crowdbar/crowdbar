@@ -63,14 +63,34 @@ describe("phases", () => {
 		expect((await postRun(run("export", [["decode", 10]]))).status).toBe(202);
 	});
 
-	it("rejects a phase the bar does not define with 422 and counts nothing", async () => {
+	it("ignores phases the bar does not define, counts the rest and lists them", async () => {
 		const { postRun, getEstimate } = await seedProject({ export: ["decode"] });
 		const res = await postRun(
 			run("export", [
 				["decode", 10],
 				["upload", 10],
+				["resize", -1],
 			]),
 		);
+		expect(res.status).toBe(202);
+		expect(await res.json()).toEqual({ ignored: ["upload", "resize"] });
+		const estimate = (await (await getEstimate("export")).json()) as {
+			phases: { phase: string; samples: number }[];
+		};
+		expect(estimate.phases.map((p) => [p.phase, p.samples])).toEqual([
+			["decode", 1],
+		]);
+	});
+
+	it("lists nothing as ignored when every phase is known", async () => {
+		const { postRun } = await seedProject({ export: ["decode"] });
+		const res = await postRun(run("export", [["decode", 10]]));
+		expect(await res.json()).toEqual({ ignored: [] });
+	});
+
+	it("rejects a run with no known phase with 422 and counts nothing", async () => {
+		const { postRun, getEstimate } = await seedProject({ export: ["decode"] });
+		const res = await postRun(run("export", [["upload", 10]]));
 		expect(res.status).toBe(422);
 		expect(((await res.json()) as { error: string }).error).toContain("upload");
 		expect(

@@ -12,10 +12,13 @@ const estimate = {
 	],
 };
 
-function setup(estimateResponse: () => Promise<Response>) {
+function setup(
+	estimateResponse: () => Promise<Response>,
+	postResponse = () => Response.json({ ignored: [] }, { status: 202 }),
+) {
 	let now = 0;
 	const fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-		if (init?.method === "POST") return new Response(null, { status: 202 });
+		if (init?.method === "POST") return postResponse();
 		void input;
 		return estimateResponse();
 	});
@@ -66,6 +69,45 @@ describe("Crowdbar", () => {
 		expect(new Headers(init?.headers).get("Authorization")).toBe(
 			"Bearer cb_pub_test",
 		);
+	});
+
+	it("warns once per bar when the API ignored reported phases", async () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		try {
+			const { crowdbar } = setup(ok, () =>
+				Response.json({ ignored: ["resize"] }, { status: 202 }),
+			);
+			for (const bar of ["export", "export", "import"]) {
+				const run = await crowdbar.start(bar);
+				run.phase("resize");
+				run.finish();
+				await new Promise((r) => setTimeout(r, 0));
+			}
+			expect(warn).toHaveBeenCalledTimes(2);
+			expect(String(warn.mock.calls[0][0])).toContain('"resize"');
+			expect(String(warn.mock.calls[1][0])).toContain('"import"');
+		} finally {
+			warn.mockRestore();
+		}
+	});
+
+	it("does not warn when nothing was ignored, or the response has no body", async () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		try {
+			for (const post of [
+				() => Response.json({ ignored: [] }, { status: 202 }),
+				() => new Response(null, { status: 202 }),
+			]) {
+				const { crowdbar } = setup(ok, post);
+				const run = await crowdbar.start("export");
+				run.phase("decode");
+				run.finish();
+				await new Promise((r) => setTimeout(r, 0));
+			}
+			expect(warn).not.toHaveBeenCalled();
+		} finally {
+			warn.mockRestore();
+		}
 	});
 
 	it("reuses the cached estimate for the next run", async () => {

@@ -26,6 +26,7 @@ export class Crowdbar {
 	readonly now: () => number;
 	// shortcut: in-memory only, lost on page reload; persist (e.g. localStorage) if cold starts matter.
 	private readonly cache = new Map<string, EstimatePhase[]>();
+	private readonly warnedBars = new Set<string>();
 
 	constructor(options: CrowdbarOptions) {
 		this.key = options.key;
@@ -74,15 +75,28 @@ export class Crowdbar {
 	}
 
 	/** @internal Fire-and-forget; failures are dropped. */
-	report(body: unknown): void {
+	report(body: { bar: string; [field: string]: unknown }): void {
 		try {
 			this.fetch(`${this.baseUrl}/runs`, {
 				method: "POST",
 				headers: { ...this.headers(), "Content-Type": "application/json" },
 				body: JSON.stringify(body),
 				keepalive: true,
-			}).catch(() => {});
+			})
+				.then((res) => res.json() as Promise<{ ignored?: unknown } | null>)
+				.then((response) => this.warnIgnored(body.bar, response?.ignored))
+				.catch(() => {});
 		} catch {}
+	}
+
+	// The API drops phases the bar does not define; one warning per bar keeps typos visible without spamming.
+	private warnIgnored(bar: string, ignored: unknown) {
+		if (!Array.isArray(ignored) || ignored.length === 0) return;
+		if (this.warnedBars.has(bar)) return;
+		this.warnedBars.add(bar);
+		console.warn(
+			`[crowdbar] Bar "${bar}" does not define the phases ${ignored.map((p) => JSON.stringify(p)).join(", ")}; they were not counted. Add them in the dashboard or fix the phase names.`,
+		);
 	}
 
 	private headers(): Record<string, string> {

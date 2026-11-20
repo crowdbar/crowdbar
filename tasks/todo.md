@@ -279,7 +279,7 @@ Figures (2026-11-16): mean ETA error as a share of run duration, averaged over 5
 
 **Acceptance criteria:**
 
-- [x] (`test/validation.test.ts`; a run may skip defined phases but never report an undefined one; durations must be 0 ms to 7 days, else `422`) Unknown key returns `401`; unknown bar returns `404`; phases that do not match the definition return `422`
+- [x] (`test/validation.test.ts`; rules in SPEC "Report a run": skipped phases are fine, undefined phases are ignored and listed in the `202`, `422` only when no phase is known or a counted duration is outside 0 ms to 7 days) Unknown key returns `401`; unknown bar returns `404`; phases that do not match the definition return `422`
 - [x] (the Durable Object is addressed by bar id) Two projects with the same bar slug have fully separate estimates
 - [ ] (pending the manual check; the demo reads the key from `VITE_CROWDBAR_KEY`) The demo page works with a real project created in the dashboard
 
@@ -481,6 +481,7 @@ Figures (2026-11-16): mean ETA error as a share of run duration, averaged over 5
 - [ ] The same contract test cases pass against the TypeScript and Python SDKs (shared JSON fixtures)
 
 **Verification:**
+- [ ] Like the TypeScript SDK, it logs one warning per bar when a `202` response lists `ignored` phases
 
 - [ ] Tests pass: `uv run pytest` in `packages/sdk-python`
 - [ ] Build succeeds: `uv build` produces a wheel that installs in a clean virtual environment
