@@ -8,6 +8,8 @@
 		"binding": "ASSETS",
 		"directory": ".svelte-kit/cloudflare"
 	},
+	// The top level is production, deployed only by .github/workflows/deploy-production.yml.
+	"routes": [{ "pattern": "crowdbar.dev", "custom_domain": true }],
 	"workers_dev": true,
 	"preview_urls": true,
 	// Overridden by previews.vars and, locally, by .dev.vars.
@@ -22,11 +24,12 @@
 			"GOOGLE_CLIENT_SECRET"
 		]
 	},
-	// No database_id: local dev uses a local D1, and the production database is created at the first production deploy.
+	// Local dev ignores the id and uses a local D1.
 	"d1_databases": [
 		{
 			"binding": "DB",
 			"database_name": "crowdbar",
+			"database_id": "71fe0479-f84b-4362-9caf-ec201b7d9ae0",
 			"migrations_dir": "../../packages/db/migrations"
 		}
 	],

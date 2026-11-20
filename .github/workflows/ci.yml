@@ -3,6 +3,16 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Where to deploy
+        type: choice
+        options: [preview, production]
+        default: preview
+
+permissions:
+  contents: read
 
 jobs:
   check:
@@ -17,3 +27,98 @@ jobs:
       - run: bun run typecheck
       - run: bun run test
       - run: bun run build
+
+  # The `main` preview acts as staging: every green push to main, or a manual run.
+  preview:
+    needs: check
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.target == 'preview')
+    runs-on: ubuntu-latest
+    concurrency: deploy-preview
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+      - name: Migrate D1
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          packageManager: bun
+          workingDirectory: packages/db
+          command: d1 migrations apply crowdbar-preview --remote
+      - name: Deploy API
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          packageManager: bun
+          workingDirectory: apps/api
+          # Pinned name: the OAuth callbacks are registered for the `main` preview URLs only.
+          command: preview --name main
+      - run: bun run --filter './apps/web' build
+        env:
+          # A public key for the preview's demo project, not a secret.
+          VITE_CROWDBAR_KEY: cb_pub_ncSJR6albuMhbvdocxATNQ-L
+      - name: Deploy web
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          packageManager: bun
+          workingDirectory: apps/web
+          command: preview --name main
+      - run: curl --fail --silent https://main-crowdbar-api.nifle.workers.dev/v1/health
+
+  production:
+    needs: check
+    if: github.ref == 'refs/heads/main' && inputs.target == 'production'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency: deploy-production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+      - name: Migrate D1
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          packageManager: bun
+          workingDirectory: apps/api
+          command: d1 migrations apply crowdbar --remote
+      - name: Deploy API
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          packageManager: bun
+          workingDirectory: apps/api
+          command: deploy
+      # No VITE_CROWDBAR_KEY yet: the demo runs in local mode until production has a demo project.
+      - run: bun run --filter './apps/web' build
+        env:
+          VITE_CROWDBAR_API: https://api.crowdbar.dev/v1
+      # GitHub secret names cannot start with GITHUB_, so they are renamed here; the file never leaves the runner.
+      - name: Write web secrets
+        run: |
+          jq -n '{BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET, GITHUB_CLIENT_ID: env.GH_CLIENT_ID, GITHUB_CLIENT_SECRET: env.GH_CLIENT_SECRET, GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET}' > "$RUNNER_TEMP/secrets.json"
+        env:
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+          GH_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      - name: Deploy web
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          packageManager: bun
+          workingDirectory: apps/web
+          command: deploy --secrets-file ${{ runner.temp }}/secrets.json
+      - run: curl --fail --silent https://api.crowdbar.dev/v1/health

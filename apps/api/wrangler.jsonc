@@ -3,7 +3,7 @@
 	"name": "crowdbar-api",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-11-16",
-	// Production route is configured but only takes effect on `wrangler deploy` (not done in Task 1).
+	// The top level is production, deployed only by .github/workflows/deploy-production.yml.
 	"routes": [{ "pattern": "api.crowdbar.dev", "custom_domain": true }],
 	"workers_dev": true,
 	"preview_urls": true,
@@ -11,11 +11,12 @@
 		"bindings": [{ "name": "BAR", "class_name": "BarObject" }]
 	},
 	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["BarObject"] }],
-	// Projects, bars and phases, written by the dashboard. No id yet: production D1 is created at first deploy.
+	// Projects, bars and phases, written by the dashboard.
 	"d1_databases": [
 		{
 			"binding": "DB",
 			"database_name": "crowdbar",
+			"database_id": "71fe0479-f84b-4362-9caf-ec201b7d9ae0",
 			"migrations_dir": "../../packages/db/migrations"
 		}
 	],

@@ -326,26 +326,28 @@ Figures (2026-11-16): mean ETA error as a share of run duration, averaged over 5
 
 ## Task 9b: Automatic deployment from GitHub
 
-**Description:** GitHub Actions deploys both Workers after lint, typecheck, test and build pass in the same workflow (not Cloudflare's dashboard Git integration). Two Wrangler environments, `staging` and `production`, each with its own Workers and D1 database. Every push to `main` applies pending D1 migrations to staging, then deploys the API Worker, then the web Worker, at `api.staging.crowdbar.dev` and `staging.crowdbar.dev`. Production runs the same steps on a manual `workflow_dispatch`, gated by a GitHub `production` environment with the owner as required reviewer, at `api.crowdbar.dev` and `crowdbar.dev`. Pull requests run the checks only and never deploy. Deploys use `cloudflare/wrangler-action@v4` with `packageManager: bun`. Previews (`wrangler preview`) stay as they are.
+**Description:** GitHub Actions deploys both Workers after lint, typecheck, test and build pass in the same workflow (not Cloudflare's dashboard Git integration). Three environments only: local, the `main` preview (acting as staging) and production; there is no separate staging environment (owner decision, 2026-11-20). Every push to `main` applies pending D1 migrations to `crowdbar-preview`, then runs `wrangler preview` for the API Worker, then the web Worker, with the preview name pinned to `main` so the URLs stay `main-crowdbar-api.nifle.workers.dev` and `main-crowdbar-web.nifle.workers.dev` (where the OAuth callbacks are registered). The same workflow has a manual `workflow_dispatch` trigger to redeploy the preview without a commit, and the local `deploy:preview` scripts keep working. Production runs migrations then `wrangler deploy` (the top level of each `wrangler.jsonc` is production) on a manual `workflow_dispatch` with target `production`, gated by a GitHub `production` environment with the owner as required reviewer, at `api.crowdbar.dev` and `crowdbar.dev`; production never deploys from a laptop. Pull requests run the checks only and never deploy. Deploys use `cloudflare/wrangler-action@v4` with `packageManager: bun`.
 
 **Acceptance criteria:**
 
 - [ ] A push to `main` with a failing test deploys nothing
-- [ ] A push to `main` with passing checks updates staging, and `curl https://api.staging.crowdbar.dev/v1/health` returns `200`
+- [ ] A push to `main` with passing checks updates the `main` preview, and `curl https://main-crowdbar-api.nifle.workers.dev/v1/health` returns `200`
+- [ ] The preview can be redeployed from the GitHub Actions tab without a commit
 - [ ] Production cannot deploy without the owner's approval in GitHub
 
 **Verification:**
 
 - [ ] Push a commit with a deliberately failing test on a throwaway branch merged to `main` (or observe a real failure) and confirm the deploy jobs are skipped
-- [ ] After a green push, staging health returns `200` and sign-in works on `staging.crowdbar.dev`
+- [ ] After a green push, the preview health returns `200` and sign-in works on `main-crowdbar-web.nifle.workers.dev`
+- [ ] Run the preview workflow manually and confirm it redeploys
 - [ ] Trigger the production workflow and confirm it waits for approval
 
-**Dependencies:** Task 8. Owner setup first: Cloudflare API token, GitHub secrets and environments, staging and production OAuth callbacks, production D1 database.
+**Dependencies:** Task 8. Owner setup first: Cloudflare API token, GitHub secrets and the `production` environment, production OAuth apps and callbacks, production D1 database.
 
 **Files likely touched:**
 
-- `.github/workflows/ci.yml` (checks, then staging deploy) and `.github/workflows/deploy-production.yml`
-- `apps/api/wrangler.jsonc`, `apps/web/wrangler.jsonc` (`env.staging`, `env.production`)
+- `.github/workflows/ci.yml` (checks, then preview deploy on push to `main` or manual run, production on manual run with approval)
+- `apps/api/wrangler.jsonc`, `apps/web/wrangler.jsonc` (production D1 id and custom domains at the top level)
 
 **Estimated scope:** Medium
 
@@ -479,9 +481,9 @@ Figures (2026-11-16): mean ETA error as a share of run duration, averaged over 5
 - [ ] A complete run produces exactly one `POST /v1/runs` with a duration for every phase, sent from a background thread
 - [ ] With the API unreachable or slow, the library raises nothing into the host code and adds no more than a short bounded delay at exit
 - [ ] The same contract test cases pass against the TypeScript and Python SDKs (shared JSON fixtures)
+- [ ] Like the TypeScript SDK, it logs one warning per bar when a `202` response lists `ignored` phases
 
 **Verification:**
-- [ ] Like the TypeScript SDK, it logs one warning per bar when a `202` response lists `ignored` phases
 
 - [ ] Tests pass: `uv run pytest` in `packages/sdk-python`
 - [ ] Build succeeds: `uv build` produces a wheel that installs in a clean virtual environment

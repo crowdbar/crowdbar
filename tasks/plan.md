@@ -42,7 +42,7 @@ Crowdbar is a crowdsourced progress bar timing API. A developer creates a projec
 - **The SDK never blocks the host app.** Local cache, safe fallback, fire-and-forget reports.
 - **Bun installs and runs scripts; Vitest runs tests.** The Workers Vitest pool is needed to test Durable Objects and D1, and it does not run under `bun test`. Wrangler itself runs fine when launched through Bun.
 
-- **Deploys run from GitHub Actions, never from a laptop or Cloudflare's Git integration** (owner decision, 2026-11-18). Staging deploys on every green push to `main`; production deploys the same commit only on a manual run approved in the GitHub `production` environment. Each environment is a Wrangler environment with its own Workers and D1 database, and migrations run before the API deploys.
+- **Deploys run from GitHub Actions, not Cloudflare's Git integration** (owner decision, 2026-11-18; staging dropped 2026-11-20). Three environments: local, the `main` preview acting as staging, and production. The preview deploys on every green push to `main`, on a manual run, or from a laptop with the `deploy:preview` scripts, always named `main` so OAuth callbacks keep matching. Production deploys only on a manual run approved in the GitHub `production` environment, never from a laptop; it is the top level of each `wrangler.jsonc`, with its own D1 database; previews are versions of the same Workers. Migrations run before the API deploys. Staging was dropped because it duplicated the `main` preview, which was already configured; the cost is that the production config path (top-level bindings, custom domains) is first exercised on the first production deploy.
 
 ## Dependency Graph
 
@@ -98,7 +98,7 @@ Passed on 2026-11-16: segments kept, pace correction dropped, Task 6 next.
 - [x] Task 7: Developer defines bars and ordered phases
 - [ ] Task 8: API accepts only valid keys, bars and phases
 - [ ] Task 9: Dashboard shows per-phase stats for a bar
-- [ ] Task 9b: Automatic deployment from GitHub (owner request: staging on every push to `main`, production on manual approval)
+- [ ] Task 9b: Automatic deployment from GitHub (owner request: `main` preview on every push to `main` or on demand, production on manual approval)
 
 ### Checkpoint B: End-to-end with a real project
 
